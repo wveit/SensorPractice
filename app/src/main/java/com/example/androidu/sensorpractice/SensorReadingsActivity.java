@@ -1,15 +1,8 @@
 package com.example.androidu.sensorpractice;
 
-import android.Manifest;
-import android.content.Context;
-import android.content.pm.PackageManager;
-import android.hardware.Sensor;
+
 import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.location.Location;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -17,29 +10,20 @@ import android.widget.Button;
 import android.widget.TextView;
 
 
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.OnSuccessListener;
-
-
 public class SensorReadingsActivity extends AppCompatActivity {
 
     private Button mFreezeButton;
     private TextView mLinearAccelerationTextView;
     private TextView mGyroscopeTextView;
-    private TextView mMagnetometerTextView;
+    private TextView mMagneticFieldTextView;
     private TextView mRotationVectorTextView;
     private TextView mGpsTextView;
 
-    private SensorManager mSensorManager;
-    private Sensor mLinearAcceleration;
-    private Sensor mGyroscope;
-    private Sensor mMagnetometer;
-    private Sensor mRotationVector;
-    private FusedLocationProviderClient mFusedLocationProviderClient;
+    private MySensor mLinearAcceleration;
+    private MySensor mGyroscope;
+    private MySensor mMagneticField;
+    private MySensor mRotationVector;
+    private MyGps mGps;
 
     private boolean mSensorsAreFrozen = true;
 
@@ -51,18 +35,22 @@ public class SensorReadingsActivity extends AppCompatActivity {
         mFreezeButton = (Button) findViewById(R.id.btn_freeze);
         mLinearAccelerationTextView = (TextView) findViewById(R.id.tv_linear_acceleration);
         mGyroscopeTextView = (TextView) findViewById(R.id.tv_gyroscope);
-        mMagnetometerTextView = (TextView) findViewById(R.id.tv_magnetometer);
+        mMagneticFieldTextView = (TextView) findViewById(R.id.tv_magnetometer);
         mRotationVectorTextView = (TextView) findViewById(R.id.tv_rotation_vector);
         mGpsTextView = (TextView) findViewById(R.id.tv_gps);
 
-        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        mLinearAcceleration = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
-        mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-        mMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-        mRotationVector = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
-        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+        mLinearAcceleration = new MySensor(this, MySensor.LINEAR_ACCELERATION);
+        mGyroscope = new MySensor(this, MySensor.GYROSCOPE);
+        mMagneticField = new MySensor(this, MySensor.MAGNETIC_FIELD);
+        mRotationVector = new MySensor(this, MySensor.ROTATION_VECTOR);
+        mGps = new MyGps(this);
 
         mFreezeButton.setOnClickListener(mButtonClickListener);
+        mLinearAcceleration.addListener(mLinearAccelerationListener);
+        mGyroscope.addListener(mGyroscopeListener);
+        mMagneticField.addListener(mMagneticFieldListener);
+        mRotationVector.addListener(mRotationVectorListener);
+        mGps.addListener(mGpsListener);
         handleButtonToggle();
     }
 
@@ -115,16 +103,16 @@ public class SensorReadingsActivity extends AppCompatActivity {
         mGyroscopeTextView.setText(sb);
     }
 
-    private void handleMagnetometerEvent(SensorEvent event){
+    private void handleMagneticFieldEvent(SensorEvent event){
         StringBuilder sb = new StringBuilder();
-        sb.append("\nMagnetometer:\n");
+        sb.append("\nMagneticField:\n");
         sb.append("x: ");
         sb.append(event.values[0]);
         sb.append("\ny: ");
         sb.append(event.values[1]);
         sb.append("\nz: ");
         sb.append(event.values[2]);
-        mMagnetometerTextView.setText(sb);
+        mMagneticFieldTextView.setText(sb);
     }
 
     private void handleRotationVectorEvent(SensorEvent event){
@@ -153,57 +141,21 @@ public class SensorReadingsActivity extends AppCompatActivity {
     }
 
     private void freezeSensors(){
-        mSensorManager.unregisterListener(mLinearAccelerationListener);
-        mSensorManager.unregisterListener(mGyroscopeListener);
-        mSensorManager.unregisterListener(mMagnetometerListener);
-        mSensorManager.unregisterListener(mRotationVectorListener);
-        stopGps();
+        mLinearAcceleration.stop();
+        mGyroscope.stop();
+        mMagneticField.stop();
+        mRotationVector.stop();
+        mGps.stop();
     }
 
     private void unfreezeSensors(){
-        mSensorManager.registerListener(mLinearAccelerationListener, mLinearAcceleration, SensorManager.SENSOR_DELAY_FASTEST);
-        mSensorManager.registerListener(mGyroscopeListener, mGyroscope, SensorManager.SENSOR_DELAY_FASTEST);
-        mSensorManager.registerListener(mMagnetometerListener, mMagnetometer, SensorManager.SENSOR_DELAY_FASTEST);
-        mSensorManager.registerListener(mRotationVectorListener, mRotationVector, SensorManager.SENSOR_DELAY_FASTEST);
-        startGps();
+        mLinearAcceleration.start();
+        mGyroscope.start();
+        mMagneticField.start();
+        mRotationVector.start();
+        mGps.start();
     }
 
-    private void startGps(){
-        /*
-            Method description:
-
-            This method first checks to see if this app has permission to use Location
-                + If have permission, request initial location (result sent to mGpsSuccessListener)
-                    and set up callback for recurring location updates (updates sent to
-                    mLocationUpdatesCallback)
-                + If do not have permission, asks for permission so that gps can be started next time
-                    (GPS will not be started this time)
-         */
-
-        boolean havePermission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-        if(havePermission){
-            try {
-                mFusedLocationProviderClient.getLastLocation().addOnSuccessListener(this, mGpsSuccessListener);
-
-                LocationRequest locationRequest = new LocationRequest();
-                locationRequest.setInterval(5000);
-                locationRequest.setFastestInterval(5000);
-                locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-
-                mFusedLocationProviderClient.requestLocationUpdates(locationRequest, mLocationUpdatesCallback, null);
-            }
-            catch(SecurityException e){
-                e.printStackTrace();
-            }
-        }
-        else{
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 3);
-        }
-    }
-
-    private void stopGps(){
-        mFusedLocationProviderClient.removeLocationUpdates(mLocationUpdatesCallback);
-    }
 
     ///////////////////////////////////////////////////////////////////////
     //
@@ -222,70 +174,38 @@ public class SensorReadingsActivity extends AppCompatActivity {
         }
     };
 
-    private SensorEventListener mLinearAccelerationListener = new SensorEventListener() {
+    private MySensor.Listener mLinearAccelerationListener = new MySensor.Listener(){
         @Override
-        public void onSensorChanged(SensorEvent event) {
+        public void onSensorEvent(SensorEvent event){
             handleLinearAccelerationEvent(event);
         }
-
-        @Override
-        public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
-        }
     };
 
-    private SensorEventListener mGyroscopeListener = new SensorEventListener() {
+    private MySensor.Listener mGyroscopeListener = new MySensor.Listener() {
         @Override
-        public void onSensorChanged(SensorEvent event) {
+        public void onSensorEvent(SensorEvent event){
             handleGyroscopeEvent(event);
         }
+    };
 
+    private MySensor.Listener mMagneticFieldListener = new MySensor.Listener() {
         @Override
-        public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
+        public void onSensorEvent(SensorEvent event){
+            handleMagneticFieldEvent(event);
         }
     };
 
-    private SensorEventListener mMagnetometerListener = new SensorEventListener() {
+    private MySensor.Listener mRotationVectorListener = new MySensor.Listener() {
         @Override
-        public void onSensorChanged(SensorEvent event) {
-            handleMagnetometerEvent(event);
-        }
-
-        @Override
-        public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
-        }
-    };
-
-    private SensorEventListener mRotationVectorListener = new SensorEventListener() {
-        @Override
-        public void onSensorChanged(SensorEvent event) {
+        public void onSensorEvent(SensorEvent event){
             handleRotationVectorEvent(event);
         }
-
-        @Override
-        public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
-        }
     };
 
-    private OnSuccessListener<Location> mGpsSuccessListener = new OnSuccessListener<Location>(){
+    private MyGps.Listener mGpsListener = new MyGps.Listener(){
         @Override
-        public void onSuccess(Location location) {
-            if(location != null){
-                handleGpsEvent(location);
-            }
-        }
-    };
-
-    private LocationCallback mLocationUpdatesCallback = new LocationCallback(){
-        @Override
-        public void onLocationResult(LocationResult locationResult) {
-            super.onLocationResult(locationResult);
-            for(Location location : locationResult.getLocations()){
-                handleGpsEvent(location);
-            }
+        public void handleLocation(Location location){
+            handleGpsEvent(location);
         }
     };
 
