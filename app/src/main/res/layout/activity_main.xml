@@ -20,4 +20,10 @@
         android:text="Sensor Readings"
         android:id="@+id/btn_sensor_readings" />
 
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Display Map"
+        android:id="@+id/btn_map" />
+
 </LinearLayout>

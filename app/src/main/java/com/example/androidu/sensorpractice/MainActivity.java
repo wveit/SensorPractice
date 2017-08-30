@@ -10,6 +10,7 @@ public class MainActivity extends AppCompatActivity {
 
     Button mSensorListButton;
     Button mSensorReadingsButton;
+    Button mMapButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -18,6 +19,7 @@ public class MainActivity extends AppCompatActivity {
 
         mSensorListButton = (Button) findViewById(R.id.btn_sensor_list);
         mSensorReadingsButton = (Button) findViewById(R.id.btn_sensor_readings);
+        mMapButton = (Button) findViewById(R.id.btn_map);
 
         mSensorListButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -31,6 +33,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this, SensorReadingsActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        mMapButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, DisplayMapActivity.class);
                 startActivity(intent);
             }
         });
