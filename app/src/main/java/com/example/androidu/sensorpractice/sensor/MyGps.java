@@ -1,4 +1,4 @@
-package com.example.androidu.sensorpractice;
+package com.example.androidu.sensorpractice.sensor;
 
 import android.Manifest;
 import android.app.Activity;

@@ -1,4 +1,4 @@
-package com.example.androidu.sensorpractice;
+package com.example.androidu.sensorpractice.sensor;
 
 
 import android.content.Context;
@@ -12,6 +12,7 @@ import java.util.ArrayList;
 public class MySensor {
 
     public static final int LINEAR_ACCELERATION = Sensor.TYPE_LINEAR_ACCELERATION;
+    public static final int GRAVITY = Sensor.TYPE_GRAVITY;
     public static final int GYROSCOPE = Sensor.TYPE_GYROSCOPE;
     public static final int MAGNETIC_FIELD = Sensor.TYPE_MAGNETIC_FIELD;
     public static final int ROTATION_VECTOR = Sensor.TYPE_ROTATION_VECTOR;
@@ -46,6 +47,7 @@ public class MySensor {
     public interface Listener{
         public void onSensorEvent(SensorEvent event);
     }
+
 
 
 

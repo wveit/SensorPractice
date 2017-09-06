@@ -26,4 +26,10 @@
         android:text="Display Map"
         android:id="@+id/btn_map" />
 
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Camera1"
+        android:id="@+id/btn_camera1" />
+
 </LinearLayout>

@@ -9,17 +9,22 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.example.androidu.sensorpractice.sensor.MyGps;
+import com.example.androidu.sensorpractice.sensor.MySensor;
+
 
 public class SensorReadingsActivity extends AppCompatActivity {
 
     private Button mFreezeButton;
     private TextView mLinearAccelerationTextView;
+    private TextView mGravityTextView;
     private TextView mGyroscopeTextView;
     private TextView mMagneticFieldTextView;
     private TextView mRotationVectorTextView;
     private TextView mGpsTextView;
 
     private MySensor mLinearAcceleration;
+    private MySensor mGravity;
     private MySensor mGyroscope;
     private MySensor mMagneticField;
     private MySensor mRotationVector;
@@ -34,12 +39,14 @@ public class SensorReadingsActivity extends AppCompatActivity {
 
         mFreezeButton = (Button) findViewById(R.id.btn_freeze);
         mLinearAccelerationTextView = (TextView) findViewById(R.id.tv_linear_acceleration);
+        mGravityTextView = (TextView) findViewById(R.id.tv_gravity);
         mGyroscopeTextView = (TextView) findViewById(R.id.tv_gyroscope);
         mMagneticFieldTextView = (TextView) findViewById(R.id.tv_magnetometer);
         mRotationVectorTextView = (TextView) findViewById(R.id.tv_rotation_vector);
         mGpsTextView = (TextView) findViewById(R.id.tv_gps);
 
         mLinearAcceleration = new MySensor(this, MySensor.LINEAR_ACCELERATION);
+        mGravity = new MySensor(this, MySensor.GRAVITY);
         mGyroscope = new MySensor(this, MySensor.GYROSCOPE);
         mMagneticField = new MySensor(this, MySensor.MAGNETIC_FIELD);
         mRotationVector = new MySensor(this, MySensor.ROTATION_VECTOR);
@@ -47,6 +54,7 @@ public class SensorReadingsActivity extends AppCompatActivity {
 
         mFreezeButton.setOnClickListener(mButtonClickListener);
         mLinearAcceleration.addListener(mLinearAccelerationListener);
+        mGravity.addListener(mGravityListener);
         mGyroscope.addListener(mGyroscopeListener);
         mMagneticField.addListener(mMagneticFieldListener);
         mRotationVector.addListener(mRotationVectorListener);
@@ -89,6 +97,18 @@ public class SensorReadingsActivity extends AppCompatActivity {
         sb.append("\nz: ");
         sb.append(event.values[2]);
         mLinearAccelerationTextView.setText(sb);
+    }
+
+    private void handleGravityEvent(SensorEvent event){
+        StringBuilder sb = new StringBuilder();
+        sb.append("\nGravity:\n");
+        sb.append("x: ");
+        sb.append(event.values[0]);
+        sb.append("\ny: ");
+        sb.append(event.values[1]);
+        sb.append("\nz: ");
+        sb.append(event.values[2]);
+        mGravityTextView.setText(sb);
     }
 
     private void handleGyroscopeEvent(SensorEvent event){
@@ -142,6 +162,7 @@ public class SensorReadingsActivity extends AppCompatActivity {
 
     private void freezeSensors(){
         mLinearAcceleration.stop();
+        mGravity.stop();
         mGyroscope.stop();
         mMagneticField.stop();
         mRotationVector.stop();
@@ -150,6 +171,7 @@ public class SensorReadingsActivity extends AppCompatActivity {
 
     private void unfreezeSensors(){
         mLinearAcceleration.start();
+        mGravity.start();
         mGyroscope.start();
         mMagneticField.start();
         mRotationVector.start();
@@ -178,6 +200,13 @@ public class SensorReadingsActivity extends AppCompatActivity {
         @Override
         public void onSensorEvent(SensorEvent event){
             handleLinearAccelerationEvent(event);
+        }
+    };
+
+    private MySensor.Listener mGravityListener = new MySensor.Listener(){
+        @Override
+        public void onSensorEvent(SensorEvent event){
+            handleGravityEvent(event);
         }
     };
 
