@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.CAMERA" />
 
     <uses-feature android:name="android.hardware.camera" />
+    <uses-feature android:glEsVersion="0x00020000" android:required="true"/>
 
     <application
         android:allowBackup="true"
@@ -21,7 +22,6 @@
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
 
-
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -29,22 +29,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-
         <activity android:name=".SensorListActivity" />
-
-
         <activity
             android:name=".SensorReadingsActivity"
             android:screenOrientation="portrait" />
-
-
         <activity android:name=".DisplayMapActivity" />
-
-
         <activity
             android:name=".CameraActivity1"
             android:screenOrientation="landscape" />
+        <activity android:name=".OpenGLActivity1"></activity>
     </application>
 
 </manifest>

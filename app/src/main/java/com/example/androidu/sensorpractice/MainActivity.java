@@ -3,15 +3,21 @@ package com.example.androidu.sensorpractice;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
+import com.example.androidu.sensorpractice.util.MyMath;
+
 public class MainActivity extends AppCompatActivity {
+
+    private static final String TAG = "wakaMainActivity";
 
     Button mSensorListButton;
     Button mSensorReadingsButton;
     Button mMapButton;
     Button mCamera1Button;
+    Button mOpenGL1Button;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,6 +28,7 @@ public class MainActivity extends AppCompatActivity {
         mSensorReadingsButton = (Button) findViewById(R.id.btn_sensor_readings);
         mMapButton = (Button) findViewById(R.id.btn_map);
         mCamera1Button = (Button) findViewById(R.id.btn_camera1);
+        mOpenGL1Button = (Button) findViewById(R.id.btn_opengl1);
 
         mSensorListButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -54,5 +61,14 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+        mOpenGL1Button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, OpenGLActivity1.class);
+                startActivity(intent);
+            }
+        });
+
     }
 }

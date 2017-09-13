@@ -32,4 +32,10 @@
         android:text="Camera1"
         android:id="@+id/btn_camera1" />
 
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="OpenGL1"
+        android:id="@+id/btn_opengl1" />
+
 </LinearLayout>

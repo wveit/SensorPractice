@@ -10,12 +10,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
-import android.widget.TextView;
 
 import com.example.androidu.sensorpractice.sensor.MySensor;
+import com.example.androidu.sensorpractice.util.MyMath;
 import com.example.androidu.sensorpractice.view.MyCameraView;
 
 public class CameraActivity1 extends AppCompatActivity {
@@ -27,9 +26,13 @@ public class CameraActivity1 extends AppCompatActivity {
 
     private MySensor mGravitySensor;
     private MySensor mMagnetSensor;
+    private MySensor mRotationVectorSensor;
 
-    private float[] mGravityVector = {0, 0, 0};
-    private float[] mMagnetVector = {0, 0, 0};
+    private float[] mGravityVector = {30, 20, 0};
+    private float[] mMagnetVector = {1, 0, 0};
+    private float[] mRotationVector = {0, 0, 0};
+    private float[] mPhoneFrontVector = {0, 0, -1};
+    private float[] mPhoneUpVector = {1, 0, 0};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,8 +61,24 @@ public class CameraActivity1 extends AppCompatActivity {
         mGravitySensor.addListener(new GravityListener());
         mMagnetSensor = new MySensor(this, MySensor.MAGNETIC_FIELD);
         mMagnetSensor.addListener(new MagnetListener());
+        mRotationVectorSensor = new MySensor(this, MySensor.ROTATION_VECTOR);
+        mRotationVectorSensor.addListener(new RotationListener());
 
         int rotation = getWindowManager().getDefaultDisplay().getRotation();
+
+        Log.d(TAG, "Angle: " + MyMath.angle(mGravityVector, mMagnetVector));
+    }
+
+    private void logVec(float[] vec){
+        StringBuilder sb = new StringBuilder();
+        sb.append("Vec: (");
+        sb.append(vec[0]);
+        for(int i = 1; i < vec.length; i++){
+            sb.append(", ");
+            sb.append(vec[i]);
+        }
+        sb.append(")");
+        Log.d(TAG, sb.toString());
     }
 
     @Override
@@ -83,27 +102,14 @@ public class CameraActivity1 extends AppCompatActivity {
     }
 
     private void updateDirection(){
-//        int direction = (int)magnitude(crossProduct(mMagnetVector, mGravityVector));
-        int direction = (int)mGravityVector[0];
-        mCameraView.setNumber(direction);
+        mCameraView.setBearing((int)MyMath.compassBearing(mGravityVector, mMagnetVector, mPhoneFrontVector));
+
+        mCameraView.setTilt((int)MyMath.landscapeTiltAngle(mGravityVector, mPhoneUpVector));
     }
 
 
 
-    private static float magnitude(float[] vec){
-        return (float) Math.sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
-    }
 
-
-    private static float[] crossProduct(float[] a, float[] b){
-        float[] c = {0, 0, 0};
-
-        c[0] = a[1] * b[2] - a[2] * b[1];
-        c[1] = a[2] * b[0] - a[0] * b[2];
-        c[2] = a[0] * b[1] - a[1] * b[0];
-
-        return c;
-    }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     //
@@ -115,9 +121,9 @@ public class CameraActivity1 extends AppCompatActivity {
         @Override
         public void onSensorEvent(SensorEvent event) {
 
-            mGravityVector[0] = event.values[0];
-            mGravityVector[1] = event.values[1];
-            mGravityVector[2] = event.values[2];
+            mGravityVector[0] = -event.values[0];
+            mGravityVector[1] = -event.values[1];
+            mGravityVector[2] = -event.values[2];
 
             updateDirection();
         }
@@ -130,6 +136,16 @@ public class CameraActivity1 extends AppCompatActivity {
             mMagnetVector[0] = event.values[0];
             mMagnetVector[1] = event.values[1];
             mMagnetVector[2] = event.values[2];
+        }
+    }
+
+    class RotationListener implements MySensor.Listener{
+        @Override
+        public void onSensorEvent(SensorEvent event) {
+
+            mRotationVector[0] = event.values[0];
+            mRotationVector[1] = event.values[1];
+            mRotationVector[2] = event.values[2];
         }
     }
 
