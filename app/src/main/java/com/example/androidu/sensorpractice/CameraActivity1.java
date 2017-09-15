@@ -9,6 +9,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Surface;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
@@ -103,8 +104,14 @@ public class CameraActivity1 extends AppCompatActivity {
 
     private void updateDirection(){
         mCameraView.setBearing((int)MyMath.compassBearing(mGravityVector, mMagnetVector, mPhoneFrontVector));
-
         mCameraView.setTilt((int)MyMath.landscapeTiltAngle(mGravityVector, mPhoneUpVector));
+        // autofocus because certain cameras need it
+        mCamera.autoFocus(new Camera.AutoFocusCallback() {
+            @Override
+            public void onAutoFocus(boolean b, Camera camera) {
+                // do nothing
+            }
+        });
     }
 
 

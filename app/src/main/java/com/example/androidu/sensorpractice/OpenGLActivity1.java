@@ -3,28 +3,31 @@ package com.example.androidu.sensorpractice;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
-import com.example.androidu.sensorpractice.view.MyGLView;
+import com.example.androidu.sensorpractice.GL.MyGLView;
 
 public class OpenGLActivity1 extends AppCompatActivity {
 
-    MyGLView mMyGLView;
+    MyGLView mGLView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mMyGLView = new MyGLView(this);
-        setContentView(mMyGLView);
+
+        // Create a GLSurfaceView instance and set it
+        // as the ContentView for this Activity.
+        mGLView = new MyGLView(this);
+        setContentView(mGLView);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        mMyGLView.onResume();
+        mGLView.onResume();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        mMyGLView.onPause();
+        mGLView.onPause();
     }
 }

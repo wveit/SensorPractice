@@ -34,7 +34,6 @@ public class MyCameraView extends SurfaceView implements SurfaceHolder.Callback{
 
         mPaint = new Paint();
         mRotationCode = activity.getWindowManager().getDefaultDisplay().getRotation();
-
     }
 
 
@@ -128,19 +127,23 @@ public class MyCameraView extends SurfaceView implements SurfaceHolder.Callback{
 
         if(mRotationCode == Surface.ROTATION_90) {
             Log.d(TAG, "Rotation 90");
-            mCamera.setDisplayOrientation(0);
+            //mCamera.setDisplayOrientation(0);
+            mCamera.setDisplayOrientation(180);
         }
         else if(mRotationCode == Surface.ROTATION_180) {
             Log.d(TAG, "Rotation 180");
-            mCamera.setDisplayOrientation(270);
+            //mCamera.setDisplayOrientation(270);
+            mCamera.setDisplayOrientation(90);
         }
         else if(mRotationCode == Surface.ROTATION_270) {
             Log.d(TAG, "Rotation 270");
-            mCamera.setDisplayOrientation(180);
+            //mCamera.setDisplayOrientation(180);
+            mCamera.setDisplayOrientation(0);
         }
         else{
-            mCamera.setDisplayOrientation(90);
             Log.d(TAG, "Rotation 0");
+            //mCamera.setDisplayOrientation(90);
+            mCamera.setDisplayOrientation(270);
         }
 
 
