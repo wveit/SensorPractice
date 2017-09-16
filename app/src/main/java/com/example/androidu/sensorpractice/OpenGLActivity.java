@@ -3,11 +3,11 @@ package com.example.androidu.sensorpractice;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
-import com.example.androidu.sensorpractice.GL.MyGLView;
+import com.example.androidu.sensorpractice.GL.GLView;
 
-public class OpenGLActivity1 extends AppCompatActivity {
+public class OpenGLActivity extends AppCompatActivity {
 
-    MyGLView mGLView;
+    GLView mGLView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -15,7 +15,7 @@ public class OpenGLActivity1 extends AppCompatActivity {
 
         // Create a GLSurfaceView instance and set it
         // as the ContentView for this Activity.
-        mGLView = new MyGLView(this);
+        mGLView = new GLView(this);
         setContentView(mGLView);
     }
 

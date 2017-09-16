@@ -1,24 +1,14 @@
 package com.example.androidu.sensorpractice.Camera;
 
 
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.PixelFormat;
-import android.hardware.Camera;
-import android.util.AttributeSet;
 import android.util.Log;
-import android.view.Surface;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.View;
 
 
-import com.example.androidu.sensorpractice.util.MyMath;
-
-import java.io.IOException;
+import com.example.androidu.sensorpractice.Utils.MyMath;
 
 public class CameraOverlayView extends View {
     private static final String TAG = "CameraOverlayView";

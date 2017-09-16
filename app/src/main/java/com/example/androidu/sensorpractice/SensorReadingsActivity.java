@@ -9,8 +9,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.example.androidu.sensorpractice.sensor.MyGps;
-import com.example.androidu.sensorpractice.sensor.MySensor;
+import com.example.androidu.sensorpractice.Sensors.MyGps;
+import com.example.androidu.sensorpractice.Sensors.MySensor;
 
 
 public class SensorReadingsActivity extends AppCompatActivity {

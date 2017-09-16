@@ -1,6 +1,4 @@
-package com.example.androidu.sensorpractice.util;
-
-import android.util.Log;
+package com.example.androidu.sensorpractice.Utils;
 
 public class MyMath {
     private static final String TAG = "wakaMyMath";

@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
         mOpenGL1Button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, OpenGLActivity1.class);
+                Intent intent = new Intent(MainActivity.this, OpenGLActivity.class);
                 startActivity(intent);
             }
         });

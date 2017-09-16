@@ -9,8 +9,8 @@ import android.widget.LinearLayout;
 
 import com.example.androidu.sensorpractice.Camera.Camera2BasicFragment;
 import com.example.androidu.sensorpractice.Camera.CameraOverlayView;
-import com.example.androidu.sensorpractice.sensor.MySensor;
-import com.example.androidu.sensorpractice.util.MyMath;
+import com.example.androidu.sensorpractice.Sensors.MySensor;
+import com.example.androidu.sensorpractice.Utils.MyMath;
 
 public class CameraActivity extends AppCompatActivity {
     private final static String TAG = "CameraActivity";

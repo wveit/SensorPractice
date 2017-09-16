@@ -14,11 +14,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 
-import com.example.androidu.sensorpractice.sensor.MySensor;
-import com.example.androidu.sensorpractice.util.MyMath;
+import com.example.androidu.sensorpractice.Sensors.MySensor;
+import com.example.androidu.sensorpractice.Utils.MyMath;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -212,15 +211,7 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
             SensorManager.getOrientation(R, angles);
             double angle = angles[0] * 180.0 / Math.PI;
 
-            float []a = {(float)angle};
-            float []b = {mBearing};
-
-            MyMath.lowPass(a, b);
-
-            if(mBearing - b[0] > 0.5)
-                updateCameraBearing(mMap, (int) Math.round(b[0]));
-
-            mBearing = b[0];
+            updateCameraBearing(mMap, (int)Math.round(angle));
         }
     }
 

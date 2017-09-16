@@ -1,4 +1,4 @@
-package com.example.androidu.sensorpractice.sensor;
+package com.example.androidu.sensorpractice.Sensors;
 
 
 import android.content.Context;
