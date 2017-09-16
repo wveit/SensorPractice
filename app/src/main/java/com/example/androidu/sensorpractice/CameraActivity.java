@@ -1,28 +1,24 @@
 package com.example.androidu.sensorpractice;
 
-import android.Manifest;
-import android.content.pm.PackageManager;
-import android.hardware.Camera;
 import android.hardware.SensorEvent;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 
+import com.example.androidu.sensorpractice.Camera.Camera2BasicFragment;
+import com.example.androidu.sensorpractice.Camera.CameraOverlayView;
 import com.example.androidu.sensorpractice.sensor.MySensor;
 import com.example.androidu.sensorpractice.util.MyMath;
-import com.example.androidu.sensorpractice.view.MyCameraView;
 
-public class CameraActivity1 extends AppCompatActivity {
+public class CameraActivity extends AppCompatActivity {
 
     private final static int PERMISSION_REQUEST_CODE = 37;
-    private final static String TAG = "wakaCameraActivity1";
-    private MyCameraView mCameraView;
-    private Camera mCamera;
+    private final static String TAG = "CameraActivity";
+
+    private CameraOverlayView mCamOverlay;
+    private Camera2BasicFragment mCamFragment;
 
     private MySensor mGravitySensor;
     private MySensor mMagnetSensor;
@@ -37,34 +33,34 @@ public class CameraActivity1 extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        setContentView(R.layout.activity_camera1);
+        setContentView(R.layout.activity_camera);
+
+        // hide the action bar (gets fullscreen)
         getSupportActionBar().hide();
 
-        ViewGroup layout = (FrameLayout) findViewById(R.id.layout_camera);
+        // try to request full screen
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        if(!cameraExists()){
-            Log.d(TAG, "Camera does not exist");
-        }
-        else if(!haveCameraPermission()){
-            Log.d(TAG, "Do not have camera permission");
-            requestCameraPermission();
-        }
-        else{
-            Log.d(TAG, "Setting up camera view");
-            mCamera = getCamera();
-            mCameraView = new MyCameraView(this, mCamera);
-            layout.addView(mCameraView);
+        // replace the camera container with a basic camera2 fragment
+        if (null == savedInstanceState) {
+            mCamFragment = Camera2BasicFragment.newInstance();
+            mCamOverlay = new CameraOverlayView(this);
+            mCamFragment.setCamLayoutCallback(new CameraLayoutCallback() {
+                @Override
+                public void setUpLayout(LinearLayout layout) {
+                    layout.addView(mCamOverlay);
+                }
+            });
+            getFragmentManager().beginTransaction().replace(R.id.cam_container, mCamFragment).commit();
         }
 
+        // initialize sensors
         mGravitySensor = new MySensor(this, MySensor.GRAVITY);
         mGravitySensor.addListener(new GravityListener());
         mMagnetSensor = new MySensor(this, MySensor.MAGNETIC_FIELD);
         mMagnetSensor.addListener(new MagnetListener());
         mRotationVectorSensor = new MySensor(this, MySensor.ROTATION_VECTOR);
         mRotationVectorSensor.addListener(new RotationListener());
-
-        int rotation = getWindowManager().getDefaultDisplay().getRotation();
 
         Log.d(TAG, "Angle: " + MyMath.angle(mGravityVector, mMagnetVector));
     }
@@ -102,14 +98,10 @@ public class CameraActivity1 extends AppCompatActivity {
     }
 
     private void updateDirection(){
-        mCameraView.setBearing((int)MyMath.compassBearing(mGravityVector, mMagnetVector, mPhoneFrontVector));
-
-        mCameraView.setTilt((int)MyMath.landscapeTiltAngle(mGravityVector, mPhoneUpVector));
+        //Log.d("CameraActivity", "updating sensors info");
+        mCamOverlay.setBearing((int)MyMath.compassBearing(mGravityVector, mMagnetVector, mPhoneFrontVector));
+        mCamOverlay.setTilt((int)MyMath.landscapeTiltAngle(mGravityVector, mPhoneUpVector));
     }
-
-
-
-
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     //
@@ -149,32 +141,7 @@ public class CameraActivity1 extends AppCompatActivity {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    //
-    //      Camera manipulation methods
-    //
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    private boolean cameraExists(){
-        return getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA);
-    }
-
-    private boolean haveCameraPermission(){
-        return ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
-    }
-
-    private void requestCameraPermission(){
-        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, PERMISSION_REQUEST_CODE);
-    }
-
-    private Camera getCamera(){
-        Camera c = null;
-        try {
-            c = Camera.open();
-        }
-        catch(Exception e){
-            e.printStackTrace();
-        }
-        return c;
+    public interface CameraLayoutCallback {
+        public void setUpLayout(LinearLayout layout);
     }
 }
