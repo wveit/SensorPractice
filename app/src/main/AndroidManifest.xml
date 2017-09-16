@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.CAMERA" />
 
     <uses-feature android:name="android.hardware.camera" />
+    <uses-feature android:name="android.hardware.camera2" />
+    <uses-feature android:name="android.hardware.camera.autofocus" />
     <uses-feature android:glEsVersion="0x00020000" android:required="true"/>
 
     <application
@@ -34,9 +36,7 @@
             android:name=".SensorReadingsActivity"
             android:screenOrientation="portrait" />
         <activity android:name=".DisplayMapActivity" />
-        <activity
-            android:name=".CameraActivity1"
-            android:screenOrientation="landscape" />
+        <activity android:name=".CameraActivity"/>
         <activity android:name=".OpenGLActivity1"></activity>
     </application>
 
