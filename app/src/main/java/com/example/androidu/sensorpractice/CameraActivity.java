@@ -13,8 +13,6 @@ import com.example.androidu.sensorpractice.sensor.MySensor;
 import com.example.androidu.sensorpractice.util.MyMath;
 
 public class CameraActivity extends AppCompatActivity {
-
-    private final static int PERMISSION_REQUEST_CODE = 37;
     private final static String TAG = "CameraActivity";
 
     private CameraOverlayView mCamOverlay;
@@ -45,6 +43,8 @@ public class CameraActivity extends AppCompatActivity {
         if (null == savedInstanceState) {
             mCamFragment = Camera2BasicFragment.newInstance();
             mCamOverlay = new CameraOverlayView(this);
+            // can't just add the view to a layout (since it may not exist yet before the camera is initialized)
+            // so we will add the camera overlay whenever the camera preview is ready
             mCamFragment.setCamLayoutCallback(new CameraLayoutCallback() {
                 @Override
                 public void setUpLayout(LinearLayout layout) {
@@ -103,6 +103,11 @@ public class CameraActivity extends AppCompatActivity {
         mCamOverlay.setTilt((int)MyMath.landscapeTiltAngle(mGravityVector, mPhoneUpVector));
     }
 
+    // public interface for when the camera layout is ready for callback
+    public interface CameraLayoutCallback {
+        public void setUpLayout(LinearLayout layout);
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     //
     //      Sensor Callbacks
@@ -112,36 +117,44 @@ public class CameraActivity extends AppCompatActivity {
     class GravityListener implements MySensor.Listener{
         @Override
         public void onSensorEvent(SensorEvent event) {
+            float[] vals = event.values.clone();
 
-            mGravityVector[0] = -event.values[0];
-            mGravityVector[1] = -event.values[1];
-            mGravityVector[2] = -event.values[2];
+            for(int i=0; i<vals.length; i++)
+                vals[i] = -vals[i];
 
-            updateDirection();
+            if(mGravityVector == null) {
+                mGravityVector = vals;
+                return;
+            }
+
+            MyMath.lowPass(vals, mGravityVector);
+
+            if(mGravityVector != null && mMagnetVector != null)
+                updateDirection();
         }
     }
 
     class MagnetListener implements MySensor.Listener{
         @Override
         public void onSensorEvent(SensorEvent event) {
+            if(mMagnetVector == null) {
+                mMagnetVector = event.values.clone();
+                return;
+            }
 
-            mMagnetVector[0] = event.values[0];
-            mMagnetVector[1] = event.values[1];
-            mMagnetVector[2] = event.values[2];
+            MyMath.lowPass(event.values.clone(), mMagnetVector);
         }
     }
 
     class RotationListener implements MySensor.Listener{
         @Override
         public void onSensorEvent(SensorEvent event) {
+            if(mRotationVector == null) {
+                mRotationVector = event.values.clone();
+                return;
+            }
 
-            mRotationVector[0] = event.values[0];
-            mRotationVector[1] = event.values[1];
-            mRotationVector[2] = event.values[2];
+            MyMath.lowPass(event.values.clone(), mRotationVector);
         }
-    }
-
-    public interface CameraLayoutCallback {
-        public void setUpLayout(LinearLayout layout);
     }
 }
