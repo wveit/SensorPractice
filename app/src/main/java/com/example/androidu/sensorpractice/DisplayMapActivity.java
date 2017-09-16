@@ -1,9 +1,11 @@
 package com.example.androidu.sensorpractice;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.SensorEvent;
+import android.hardware.SensorManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -45,6 +47,8 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
     private float[] mRotationVector = null;
     private float[] mPhoneFrontVector = {0, 0, -1};
     private float[] mPhoneUpVector = {1, 0, 0};
+
+    private float mBearing = 0;
 
     private boolean mMapAnimating = false;
 
@@ -99,6 +103,10 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
         }
 
         super.onResume();
+
+        // renew gps data
+        if(mMap != null)
+            getCurrentLocation();
     }
 
     @Override
@@ -118,14 +126,18 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
             return;
         }
 
-        mMap.setMyLocationEnabled(true);
-        mFusedLocationClient.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
+        final Activity a = this;
+
+        OnSuccessListener<Location> listener = new OnSuccessListener<Location>() {
             @Override
             public void onSuccess(Location location) {
                 if (location != null) {
                     currentLoc = new LatLng(location.getLatitude(), location.getLongitude());
+                    if(location.hasBearing())
+                        mBearing = location.getBearing();
                     Log.d(TAG, "my current position is " + location.getLatitude() + ", " + location.getLongitude());
-                    mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLoc, DEFAULT_ZOOM), 1000, new GoogleMap.CancelableCallback() {
+                    CameraPosition camPos = CameraPosition.builder(mMap.getCameraPosition()).target(currentLoc).bearing(mBearing).zoom(DEFAULT_ZOOM).build();
+                    mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos), 1000, new GoogleMap.CancelableCallback() {
                         @Override
                         public void onFinish() {
                             Log.d(TAG, "sensors started");
@@ -141,7 +153,7 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
                         }
                     });
 
-                    // only initialize sensors once we have a position and we have locked on (avoids weird glitches
+                    // only initialize sensors once we have a position and we have locked on (avoids weird glitches)
                     mGravitySensor = new MySensor(context, MySensor.GRAVITY);
                     mGravitySensor.addListener(new DisplayMapActivity.GravityListener());
                     mMagnetSensor = new MySensor(context, MySensor.MAGNETIC_FIELD);
@@ -150,7 +162,32 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
                     mRotationVectorSensor.addListener(new DisplayMapActivity.RotationListener());
                 }
             }
-        });
+        };
+
+        if(currentLoc != null) {
+            listener = new OnSuccessListener<Location>() {
+                @Override
+                public void onSuccess(Location location) {
+                    currentLoc = new LatLng(location.getLatitude(), location.getLongitude());
+                    CameraPosition camPos = CameraPosition.builder(mMap.getCameraPosition()).target(currentLoc).build();
+                    mMapAnimating = true;
+                    mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos), 1000, new GoogleMap.CancelableCallback() {
+                        @Override
+                        public void onFinish() {
+                            mMapAnimating = false;
+                        }
+
+                        @Override
+                        public void onCancel() {
+
+                        }
+                    });
+                }
+            };
+        }
+
+        mMap.setMyLocationEnabled(true);
+        mFusedLocationClient.getLastLocation().addOnSuccessListener(a, listener);
     }
 
     // return the distance from user in minutes
@@ -160,30 +197,31 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
         return SphericalUtil.computeDistanceBetween(currentLoc, new LatLng(lat, lon)) / USER_SPEED;
     }
 
-    private void updateCameraBearing(GoogleMap googleMap, final float bearing) {
-        if ( googleMap == null || mMapAnimating) return;
+    private void updateCameraBearing(GoogleMap googleMap, final int bearing) {
+        if (googleMap == null) return;
         CameraPosition camP = CameraPosition.builder(googleMap.getCameraPosition()).bearing(bearing).build();
-        mMapAnimating = true;
-        googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(camP), 133,  new GoogleMap.CancelableCallback() {
-                    @Override
-                    public void onFinish() {
-                        mMapAnimating = false;
-                    }
-
-                    @Override
-                    public void onCancel() {
-
-                    }
-                });
+        googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(camP));
     }
 
-    private void updateDirection(){
-        double compassBearing = MyMath.compassBearing(mGravityVector, mMagnetVector, mPhoneFrontVector);
-        //Log.d("DisplayMapActivity", "bearing: " + compassBearing + " tilt: " + tiltAngle);
+    private void updateDirection() {
+        float[] R = new float[9];
+        float[] I = new float[9];
 
-        updateCameraBearing(mMap, (float)((int)compassBearing));
-        //mCamOverlay.setBearing((int) MyMath.compassBearing(mGravityVector, mMagnetVector, mPhoneFrontVector));
-        //mCamOverlay.setTilt((int)MyMath.landscapeTiltAngle(mGravityVector, mPhoneUpVector));
+        if(SensorManager.getRotationMatrix(R, I, mGravityVector, mMagnetVector)) {
+            float[] angles = new float[3];
+            SensorManager.getOrientation(R, angles);
+            double angle = angles[0] * 180.0 / Math.PI;
+
+            float []a = {(float)angle};
+            float []b = {mBearing};
+
+            MyMath.lowPass(a, b);
+
+            if(mBearing - b[0] > 0.5)
+                updateCameraBearing(mMap, (int) Math.round(b[0]));
+
+            mBearing = b[0];
+        }
     }
 
     @Override
@@ -212,17 +250,12 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
     class GravityListener implements MySensor.Listener{
         @Override
         public void onSensorEvent(SensorEvent event) {
-            float[] vals = event.values.clone();
-
-            for(int i=0; i<vals.length; i++)
-                vals[i] = -vals[i];
-
             if(mGravityVector == null) {
-                mGravityVector = vals;
+                mGravityVector = event.values.clone();
                 return;
             }
 
-            MyMath.lowPass(vals, mGravityVector);
+            MyMath.lowPass(event.values.clone(), mGravityVector);
 
             if(mGravityVector != null && mMagnetVector != null)
                 updateDirection();
