@@ -15,6 +15,7 @@ import android.util.Log;
 import android.view.View;
 
 import com.example.androidu.sensorpractice.Sensors.MySensor;
+import com.example.androidu.sensorpractice.Sensors.SensorService;
 import com.example.androidu.sensorpractice.Utils.MyMath;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -37,9 +38,7 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
     private Context context;
     private LatLng currentLoc;
 
-    private MySensor mGravitySensor;
-    private MySensor mMagnetSensor;
-    private MySensor mRotationVectorSensor;
+    private SensorService mSensors;
 
     private float[] mGravityVector = null;
     private float[] mMagnetVector = null;
@@ -95,11 +94,8 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
 
     @Override
     protected void onResume() {
-        if(mGravitySensor != null && mGravitySensor.sensorExists() &&
-           mMagnetSensor != null && mMagnetSensor.sensorExists()) {
-            mGravitySensor.start();
-            mMagnetSensor.start();
-        }
+        if(mSensors != null)
+            mSensors.start();
 
         super.onResume();
 
@@ -110,10 +106,8 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
 
     @Override
     protected void onPause() {
-        if(mGravitySensor != null && mGravitySensor.sensorExists())
-            mGravitySensor.stop();
-        if(mMagnetSensor != null && mMagnetSensor.sensorExists())
-            mMagnetSensor.stop();
+        if(mSensors != null)
+            mSensors.stop();
 
         super.onPause();
     }
@@ -136,14 +130,13 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
                         mBearing = location.getBearing();
                     Log.d(TAG, "my current position is " + location.getLatitude() + ", " + location.getLongitude());
                     CameraPosition camPos = CameraPosition.builder(mMap.getCameraPosition()).target(currentLoc).bearing(mBearing).zoom(DEFAULT_ZOOM).build();
-                    mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos), 1000, new GoogleMap.CancelableCallback() {
+                    mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos), 500, new GoogleMap.CancelableCallback() {
                         @Override
                         public void onFinish() {
                             Log.d(TAG, "sensors started");
 
                             // start the sensors
-                            mGravitySensor.start();
-                            mMagnetSensor.start();
+                            mSensors.start();
                         }
 
                         @Override
@@ -152,13 +145,12 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
                         }
                     });
 
-                    // only initialize sensors once we have a position and we have locked on (avoids weird glitches)
-                    mGravitySensor = new MySensor(context, MySensor.GRAVITY);
-                    mGravitySensor.addListener(new DisplayMapActivity.GravityListener());
-                    mMagnetSensor = new MySensor(context, MySensor.MAGNETIC_FIELD);
-                    mMagnetSensor.addListener(new DisplayMapActivity.MagnetListener());
-                    mRotationVectorSensor = new MySensor(context, MySensor.ROTATION_VECTOR);
-                    mRotationVectorSensor.addListener(new DisplayMapActivity.RotationListener());
+                    mSensors = new SensorService(context, new SensorService.Callback() {
+                        @Override
+                        public void sensorServiceCallback(SensorEvent event) {
+                            handleSensorEvent(event);
+                        }
+                    }, new int[] {SensorService.GRAVITY, SensorService.MAGNETIC_FIELD});
                 }
             }
         };
@@ -170,7 +162,7 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
                     currentLoc = new LatLng(location.getLatitude(), location.getLongitude());
                     CameraPosition camPos = CameraPosition.builder(mMap.getCameraPosition()).target(currentLoc).build();
                     mMapAnimating = true;
-                    mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos), 1000, new GoogleMap.CancelableCallback() {
+                    mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos), 500, new GoogleMap.CancelableCallback() {
                         @Override
                         public void onFinish() {
                             mMapAnimating = false;
@@ -215,6 +207,28 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
         }
     }
 
+    private void handleSensorEvent(SensorEvent event) {
+        if(event.sensor.getType() == SensorService.GRAVITY) {
+            if(mGravityVector == null) {
+                mGravityVector = event.values.clone();
+                return;
+            }
+            else
+                MyMath.lowPass(event.values.clone(), mGravityVector);
+        }
+        else {
+            if(mMagnetVector == null) {
+                mMagnetVector = event.values.clone();
+                return;
+            }
+            else
+                MyMath.lowPass(event.values.clone(), mMagnetVector);
+        }
+
+        if(mGravityVector != null && mMagnetVector != null)
+            updateDirection();
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String permissions[],
@@ -230,50 +244,5 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
         // this means the device will keep asking for permission until it is granted
         // TODO: display a proper error message
         getCurrentLocation();
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    //
-    //      Sensor Callbacks
-    //
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    class GravityListener implements MySensor.Listener{
-        @Override
-        public void onSensorEvent(SensorEvent event) {
-            if(mGravityVector == null) {
-                mGravityVector = event.values.clone();
-                return;
-            }
-
-            MyMath.lowPass(event.values.clone(), mGravityVector);
-
-            if(mGravityVector != null && mMagnetVector != null)
-                updateDirection();
-        }
-    }
-
-    class MagnetListener implements MySensor.Listener{
-        @Override
-        public void onSensorEvent(SensorEvent event) {
-            if(mMagnetVector == null) {
-                mMagnetVector = event.values.clone();
-                return;
-            }
-
-            MyMath.lowPass(event.values.clone(), mMagnetVector);
-        }
-    }
-
-    class RotationListener implements MySensor.Listener{
-        @Override
-        public void onSensorEvent(SensorEvent event) {
-            if(mRotationVector == null) {
-                mRotationVector = event.values.clone();
-                return;
-            }
-
-            MyMath.lowPass(event.values.clone(), mRotationVector);
-        }
     }
 }
