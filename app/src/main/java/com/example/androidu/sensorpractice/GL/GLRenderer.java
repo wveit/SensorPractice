@@ -18,6 +18,9 @@ import javax.microedition.khronos.opengles.GL10;
 public class GLRenderer implements GLSurfaceView.Renderer{
     GLTriangle mTriangle;
     GLSquare mSquare;
+    double mBearing = 0.0;
+    double mTilt = 0.0;
+    double mRatio = 0.0;
 
     @Override
     public void onDrawFrame(GL10 gl) {
@@ -38,17 +41,18 @@ public class GLRenderer implements GLSurfaceView.Renderer{
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         // set background frame color
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-
-        if(mTriangle != null)
-            mTriangle.init();
-
-        if(mSquare != null)
-            mSquare.init();
     }
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         //resize
+        Log.d("GLRenderer", "surface changed to " + width + "x" + height);
+        mRatio = width * 1.0 / height;
+
+        if(mTriangle != null)
+            mTriangle.init(mRatio);
+        if(mSquare != null)
+            mSquare.init(mRatio);
         GLES20.glViewport(0, 0, width, height);
     }
 
@@ -57,6 +61,14 @@ public class GLRenderer implements GLSurfaceView.Renderer{
     }
     public void add(GLSquare square) {
         mSquare = square;
+    }
+
+    public void setBearing(double bearing) {
+        mBearing = bearing;
+    }
+
+    public void setTilt(double tilt) {
+        mTilt = tilt;
     }
 
     public static int loadShader(int type, String shaderCode){

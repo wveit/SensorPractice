@@ -32,12 +32,6 @@ public class GLSquare {
     // number of coordinates per vertex in this array
     private static final int COORDS_PER_VERTEX = 3;
 
-    private static float squareCoords[] = {
-            -0.5f,  0.5f, 0.0f,   // top left
-            -0.5f, -0.5f, 0.0f,   // bottom left
-            0.5f, -0.5f, 0.0f,   // bottom right
-            0.5f,  0.5f, 0.0f }; // top right
-
     private short drawOrder[] = { 0, 1, 2, 0, 2, 3 }; // order to draw vertices
 
     // color values are stored in a float array
@@ -46,14 +40,22 @@ public class GLSquare {
     private int mPositionHandle;
     private int mColorHandle;
 
-    private final int vertexCount = squareCoords.length / COORDS_PER_VERTEX;
+    private int vertexCount = 0;
     private final int vertexStride = COORDS_PER_VERTEX * 4; // 4 bytes per vertex
 
     private int mProgram;
 
     public GLSquare() {}
 
-    public void init() {
+    public void init(double ratio) {
+        float squareCoords[] = {
+                -0.5f,  (float)(0.5 * ratio), 0.0f,   // top left
+                -0.5f, (float)(-0.5 * ratio), 0.0f,   // bottom left
+                0.5f, (float)(-0.5 * ratio), 0.0f,   // bottom right
+                0.5f,  (float)(0.5 * ratio), 0.0f }; // top right
+
+        vertexCount = squareCoords.length / COORDS_PER_VERTEX;
+
         // initialize vertex byte buffer for shape coordinates
         ByteBuffer bb = ByteBuffer.allocateDirect(
                 // (# of coordinate values * 4 bytes per float)

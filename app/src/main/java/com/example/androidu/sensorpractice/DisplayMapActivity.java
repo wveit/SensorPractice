@@ -195,6 +195,7 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
     }
 
     private void updateDirection() {
+        /*
         float[] R = new float[9];
         float[] I = new float[9];
 
@@ -205,6 +206,10 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
 
             updateCameraBearing(mMap, (int)Math.round(angle));
         }
+        */
+        int bearing = (int)MyMath.compassBearing(mGravityVector, mMagnetVector, mPhoneFrontVector);
+        //float tilt = MyMath.landscapeTiltAngle(mGravityVector, mPhoneUpVector);
+        updateCameraBearing(mMap, bearing);
     }
 
     private void handleSensorEvent(SensorEvent event) {

@@ -6,25 +6,21 @@ import android.os.Bundle;
 
 import com.example.androidu.sensorpractice.GL.GLRenderer;
 import com.example.androidu.sensorpractice.GL.GLSquare;
+import com.example.androidu.sensorpractice.GL.GLView;
 
 public class OpenGLActivity extends AppCompatActivity {
     GLSurfaceView mGLView;
-    GLRenderer mRenderer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        getSupportActionBar().hide();
+
         // Create a GLSurfaceView instance and set it
         // as the ContentView for this Activity.
-        mGLView = new GLSurfaceView(this);
-        mGLView.setEGLContextClientVersion(2);
-        mRenderer = new GLRenderer();
-        mGLView.setRenderer(mRenderer);
-        mGLView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+        mGLView = new GLView(this);
         setContentView(mGLView);
-
-        mRenderer.add(new GLSquare());
     }
 
     @Override
