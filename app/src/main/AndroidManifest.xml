@@ -35,8 +35,10 @@
         <activity
             android:name=".SensorReadingsActivity"
             android:screenOrientation="portrait" />
-        <activity android:name=".DisplayMapActivity" />
-        <activity android:name=".CameraActivity"/>
+        <activity android:name=".DisplayMapActivity"
+            android:screenOrientation="portrait" />
+        <activity android:name=".CameraActivity"
+            android:screenOrientation="portrait" />
         <activity android:name=".OpenGLActivity"></activity>
     </application>
 
