@@ -189,9 +189,22 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
     }
 
     private void updateCameraBearing(GoogleMap googleMap, final int bearing) {
-        if (googleMap == null) return;
+        if (googleMap == null || mMapAnimating) return;
         CameraPosition camP = CameraPosition.builder(googleMap.getCameraPosition()).bearing(bearing).build();
-        googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(camP));
+        //googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(camP));
+        //googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(camP));
+        mMapAnimating = true;
+        googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(camP), 33, new GoogleMap.CancelableCallback() {
+            @Override
+            public void onFinish() {
+                mMapAnimating = false;
+            }
+
+            @Override
+            public void onCancel() {
+                // supposed to do something?
+            }
+        });
     }
 
     private void updateDirection() {
@@ -207,9 +220,12 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
             updateCameraBearing(mMap, (int)Math.round(angle));
         }
         */
-        int bearing = (int)MyMath.compassBearing(mGravityVector, mMagnetVector, mPhoneFrontVector);
+        int bearing = 360 - (int)MyMath.compassBearing(mGravityVector, mMagnetVector, mPhoneFrontVector);
         //float tilt = MyMath.landscapeTiltAngle(mGravityVector, mPhoneUpVector);
-        updateCameraBearing(mMap, bearing);
+        if(Math.abs(bearing - mBearing) >= 3) {
+            updateCameraBearing(mMap, bearing);
+            mBearing = bearing;
+        }
     }
 
     private void handleSensorEvent(SensorEvent event) {
