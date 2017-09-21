@@ -10,6 +10,7 @@ import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.util.ArrayMap;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -28,6 +29,8 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.maps.android.SphericalUtil;
 
+import java.util.Map;
+
 public class DisplayMapActivity extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback {
     private static final String TAG = "DisplayMapActivity";
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 0;
@@ -40,11 +43,9 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
 
     private SensorService mSensors;
 
-    private float[] mGravityVector = null;
-    private float[] mMagnetVector = null;
-    private float[] mRotationVector = null;
     private float[] mPhoneFrontVector = {0, 0, -1};
     private float[] mPhoneUpVector = {1, 0, 0};
+    ArrayMap<Integer, float[]> mSensorData;
 
     private float mBearing = 0;
 
@@ -145,6 +146,7 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
                         }
                     });
 
+                    mSensorData = new ArrayMap<>();
                     mSensors = new SensorService(context, new SensorService.Callback() {
                         @Override
                         public void sensorServiceCallback(SensorEvent event) {
@@ -189,12 +191,14 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
     }
 
     private void updateCameraBearing(GoogleMap googleMap, final int bearing) {
-        if (googleMap == null || mMapAnimating) return;
+        if (googleMap == null) return;
         CameraPosition camP = CameraPosition.builder(googleMap.getCameraPosition()).bearing(bearing).build();
-        //googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(camP));
-        //googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(camP));
+        googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(camP));
+        /*
+        if (mMapAnimating)
+            googleMap.stopAnimation();
         mMapAnimating = true;
-        googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(camP), 33, new GoogleMap.CancelableCallback() {
+        googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(camP), 333, new GoogleMap.CancelableCallback() {
             @Override
             public void onFinish() {
                 mMapAnimating = false;
@@ -203,11 +207,15 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
             @Override
             public void onCancel() {
                 // supposed to do something?
+                mMapAnimating = false;
             }
         });
+        */
     }
 
     private void updateDirection() {
+        // the below was an experiment that didn't quite work out
+        // it can only get the compass bearing when the device is lying down
         /*
         float[] R = new float[9];
         float[] I = new float[9];
@@ -220,7 +228,11 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
             updateCameraBearing(mMap, (int)Math.round(angle));
         }
         */
-        int bearing = 360 - (int)MyMath.compassBearing(mGravityVector, mMagnetVector, mPhoneFrontVector);
+        float[] gravVector = mSensorData.get(new Integer(SensorService.GRAVITY));
+        float[] magnetVector = mSensorData.get(new Integer(SensorService.MAGNETIC_FIELD));
+        // map bearing is reversed
+        int bearing = 360 - (int)MyMath.compassBearing(gravVector, magnetVector, mPhoneFrontVector);
+        // we don't need to give it a tilt (yet)
         //float tilt = MyMath.landscapeTiltAngle(mGravityVector, mPhoneUpVector);
         if(Math.abs(bearing - mBearing) >= 3) {
             updateCameraBearing(mMap, bearing);
@@ -229,24 +241,16 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
     }
 
     private void handleSensorEvent(SensorEvent event) {
-        if(event.sensor.getType() == SensorService.GRAVITY) {
-            if(mGravityVector == null) {
-                mGravityVector = event.values.clone();
-                return;
-            }
-            else
-                MyMath.lowPass(event.values.clone(), mGravityVector);
-        }
+        Integer key = new Integer(event.sensor.getType());
+        if(!mSensorData.containsKey(key))
+            mSensorData.put(key, event.values.clone());
         else {
-            if(mMagnetVector == null) {
-                mMagnetVector = event.values.clone();
-                return;
-            }
-            else
-                MyMath.lowPass(event.values.clone(), mMagnetVector);
+            float[] outputVector = mSensorData.get(key);
+            MyMath.lowPass(event.values.clone(), outputVector);
+            mSensorData.put(key, outputVector);
         }
 
-        if(mGravityVector != null && mMagnetVector != null)
+        if(mSensorData.size() > 1)
             updateDirection();
     }
 
