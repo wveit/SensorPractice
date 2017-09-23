@@ -1,5 +1,7 @@
 package com.example.androidu.sensorpractice.Utils;
 
+import android.util.Log;
+
 public class MyMath {
     private static final String TAG = "wakaMyMath";
 
@@ -111,6 +113,16 @@ public class MyMath {
         }
         else
             return 360 - angle;
+    }
+
+    // simpler tilt angle math, currently only works with gravity vectors
+    public static float tiltAngle(float[] gravityVec, float[] phoneUpVec) {
+        float theta = (float) Math.atan(-gravityVec[1] / gravityVec[0]);
+        theta = MyMath.radToDegrees(theta);
+
+        if(gravityVec[0] < 0.0) theta += 180;
+
+        return theta;
     }
 
     // taken from http://blog.thomnichols.org/2011/08/smoothing-sensor-data-with-a-low-pass-filter

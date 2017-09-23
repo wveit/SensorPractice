@@ -26,7 +26,7 @@ public class CameraActivity extends AppCompatActivity {
     private float[] mMagnetVector = {1, 0, 0};
     private float[] mRotationVector = {0, 0, 0};
     private float[] mPhoneFrontVector = {0, 0, -1};
-    private float[] mPhoneUpVector = {1, 0, 0};
+    private float[] mPhoneUpVector = {0, 1, 0};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,7 +100,8 @@ public class CameraActivity extends AppCompatActivity {
     private void updateDirection(){
         //Log.d("CameraActivity", "updating sensors info");
         mCamOverlay.setBearing((int)MyMath.compassBearing(mGravityVector, mMagnetVector, mPhoneFrontVector));
-        mCamOverlay.setTilt((int)MyMath.landscapeTiltAngle(mGravityVector, mPhoneUpVector));
+        //mCamOverlay.setTilt((int)MyMath.landscapeTiltAngle(mGravityVector, mPhoneUpVector));
+        mCamOverlay.setTilt((int)MyMath.tiltAngle(mGravityVector, mPhoneUpVector));
     }
 
     // public interface for when the camera layout is ready for callback
