@@ -44,7 +44,7 @@ public class MyMath {
     }
 
     public static float degreesToRad(float degrees){
-        return (float) (degrees / 360 * 2 * Math.PI);
+        return (float) (degrees / 360.0 * 2 * Math.PI);
     }
 
     public static float compassBearing(float[] gravityVec, float[] magnetVec, float[] cameraVec){
@@ -58,11 +58,11 @@ public class MyMath {
         //  * Project cameraVec onto earth's xz plane -> xzCamera
         //  * Use dot product to find angle between xzMagnet and xzCamera
 
-        float[] xzTemp = MyMath.crossProduct(magnetVec, gravityVec);
-        float[] xzMagnet = MyMath.crossProduct(gravityVec, xzTemp);
+        //float[] xzTemp = MyMath.crossProduct(magnetVec, gravityVec);
+        float[] xzMagnet = magnetVec;
 
-        xzTemp = MyMath.crossProduct(cameraVec, gravityVec);
-        float[] xzCamera = MyMath.crossProduct(gravityVec, xzTemp);
+        //float[] xzTemp = MyMath.crossProduct(cameraVec, gravityVec);
+        float[] xzCamera = cameraVec;
 
         float angle = MyMath.angle(xzCamera, xzMagnet);
         angle = MyMath.radToDegrees(angle);
