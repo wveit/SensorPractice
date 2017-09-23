@@ -28,6 +28,8 @@ public class CameraActivity extends AppCompatActivity {
     private float[] mPhoneFrontVector = {0, 0, -1};
     private float[] mPhoneUpVector = {0, 1, 0};
 
+    private float mBearing = 0.0f;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -99,7 +101,12 @@ public class CameraActivity extends AppCompatActivity {
 
     private void updateDirection(){
         //Log.d("CameraActivity", "updating sensors info");
-        mCamOverlay.setBearing((int)MyMath.compassBearing(mGravityVector, mMagnetVector, mPhoneFrontVector));
+        //float bearing = MyMath.compassBearing(mGravityVector, mMagnetVector, mPhoneFrontVector);
+        float bearing = MyMath.compassBearing(mMagnetVector, mPhoneFrontVector);
+        if (Math.abs(bearing - mBearing) >= 1.10) {
+            mCamOverlay.setBearing((int) bearing);
+            mBearing = bearing;
+        }
         //mCamOverlay.setTilt((int)MyMath.landscapeTiltAngle(mGravityVector, mPhoneUpVector));
         mCamOverlay.setTilt((int)MyMath.tiltAngle(mGravityVector, mPhoneUpVector));
     }

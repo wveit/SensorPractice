@@ -12,12 +12,6 @@ public class MyMath {
         c[1] = a[2] * b[0] - a[0] * b[2];
         c[2] = a[0] * b[1] - a[1] * b[0];
 
-        c[0] = (a[2] * b[0] - a[0] * b[2]) * b[2] - (a[0] * b[1] - a[1] * b[0]) * b[1];
-        c[0] = a[2] * b[0] * b[2] - a[0] * b[2] * b[2] - a[0] * b[1] * b[1] - a[1] * b[0] * b[1];
-        c[0] =
-        c[1] = c[2] * b[0] - c[0] * b[2];
-        c[2] = c[0] * b[1] - c[1] * b[0];
-
         return c;
     }
 
@@ -88,6 +82,28 @@ public class MyMath {
             return 360 - angle;
     }
 
+    public static float compassBearing(float[] magnetVec, float[] cameraVec){
+        // Information we have:
+        //  + gravityVec: A vector representing the direction and magnitude of gravity in camera coordinate system
+        //  + magnetVec: A vector representing the direction and magnitude of earth's magnetic field from camera coordinate system
+        //  + cameraVec: A vector representing the direction of the camera in phone coordinate system
+
+        // Algorithm for finding compass bearing:
+        //  * Project magnetVec onto earth's xz plane -> xzMagnet
+        //  * Project cameraVec onto earth's xz plane -> xzCamera
+        //  * Use dot product to find angle between xzMagnet and xzCamera
+
+        float dx = magnetVec[0] - cameraVec[0];
+        float dy = magnetVec[2] - cameraVec[2];
+        float angle = (float) Math.atan(dx / dy);
+        angle = MyMath.radToDegrees(angle);
+
+        if(magnetVec[2] <= -1.0)
+            return angle;
+        else
+            return 180 + angle;
+    }
+
     public static String vec2String(float[] vec){
         StringBuilder sb = new StringBuilder();
         sb.append("Vec: (");
@@ -132,7 +148,7 @@ public class MyMath {
     * 0 ≤ alpha ≤ 1 ; a smaller value basically means more smoothing
     * See: http://en.wikipedia.org/wiki/Low-pass_filter#Discrete-time_realization
     */
-    static final float ALPHA = 0.1f;
+    static final float ALPHA = 0.09f;
 
     /**
      * @see http://en.wikipedia.org/wiki/Low-pass_filter#Algorithmic_implementation

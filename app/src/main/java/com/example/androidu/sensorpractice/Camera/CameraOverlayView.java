@@ -85,5 +85,6 @@ public class CameraOverlayView extends View {
 
     public void setTilt(int tilt){
         mTilt = tilt;
+        invalidate();
     }
 }

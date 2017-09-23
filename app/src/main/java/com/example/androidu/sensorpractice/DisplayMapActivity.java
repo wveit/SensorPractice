@@ -45,7 +45,7 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
 
     private float[] mPhoneFrontVector = {0, 0, -1};
     private float[] mPhoneUpVector = {1, 0, 0};
-    ArrayMap<Integer, float[]> mSensorData;
+    private float[] mSensorData = null;
 
     private float mBearing = 0;
 
@@ -127,9 +127,11 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
             public void onSuccess(Location location) {
                 if (location != null) {
                     currentLoc = new LatLng(location.getLatitude(), location.getLongitude());
-                    if(location.hasBearing())
+                    if(location.hasBearing()) {
+                        Log.d(TAG, "this location has bearing");
                         mBearing = location.getBearing();
-                    Log.d(TAG, "my current position is " + location.getLatitude() + ", " + location.getLongitude());
+                    }
+                    Log.d(TAG, "my current position is " + location.getLatitude() + ", " + location.getLongitude() + " with bearing = " + mBearing);
                     CameraPosition camPos = CameraPosition.builder(mMap.getCameraPosition()).target(currentLoc).bearing(mBearing).zoom(DEFAULT_ZOOM).build();
                     mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos), 500, new GoogleMap.CancelableCallback() {
                         @Override
@@ -146,13 +148,12 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
                         }
                     });
 
-                    mSensorData = new ArrayMap<>();
                     mSensors = new SensorService(context, new SensorService.Callback() {
                         @Override
                         public void sensorServiceCallback(SensorEvent event) {
                             handleSensorEvent(event);
                         }
-                    }, new int[] {SensorService.GRAVITY, SensorService.MAGNETIC_FIELD});
+                    }, new int[] {SensorService.MAGNETIC_FIELD});
                 }
             }
         };
@@ -220,39 +221,34 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
         float[] R = new float[9];
         float[] I = new float[9];
 
-        if(SensorManager.getRotationMatrix(R, I, mGravityVector, mMagnetVector)) {
+        if(SensorManager.getRotationMatrix(R, I, mSensorData.get(new Integer(SensorService.GRAVITY)), mSensorData.get(new Integer(SensorService.MAGNETIC_FIELD)))) {
             float[] angles = new float[3];
             SensorManager.getOrientation(R, angles);
             double angle = angles[0] * 180.0 / Math.PI;
+            Log.d("MAP ACTIVITY", "angle = " + angle);
 
             updateCameraBearing(mMap, (int)Math.round(angle));
         }
         */
-        float[] gravVector = mSensorData.get(new Integer(SensorService.GRAVITY));
-        float[] magnetVector = mSensorData.get(new Integer(SensorService.MAGNETIC_FIELD));
-        // map bearing is reversed
-        // todo: take out gravity vector because we only need the magnetometer
-        float bearing = MyMath.compassBearing(gravVector, magnetVector, mPhoneFrontVector);
+
+        float bearing = MyMath.compassBearing(mSensorData, mPhoneFrontVector);
         // we don't need to give it a tilt (yet)
         //float tilt = MyMath.landscapeTiltAngle(mGravityVector, mPhoneUpVector);
-        if(Math.abs(bearing - mBearing) >= 2.0) {
+        if(Math.abs(bearing - mBearing) >= 1.10) {
             updateCameraBearing(mMap, bearing);
             mBearing = bearing;
         }
     }
 
     private void handleSensorEvent(SensorEvent event) {
-        Integer key = new Integer(event.sensor.getType());
-        if(!mSensorData.containsKey(key))
-            mSensorData.put(key, event.values.clone());
-        else {
-            float[] outputVector = mSensorData.get(key);
-            MyMath.lowPass(event.values.clone(), outputVector);
-            mSensorData.put(key, outputVector);
-        }
+        //if(event.accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE)  return;
 
-        if(mSensorData.size() > 1)
-            updateDirection();
+        if(mSensorData != null)
+            MyMath.lowPass(event.values.clone(), mSensorData);
+        else
+            mSensorData = event.values.clone();
+
+        updateDirection();
     }
 
     @Override
