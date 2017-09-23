@@ -10,6 +10,12 @@ public class MyMath {
         c[1] = a[2] * b[0] - a[0] * b[2];
         c[2] = a[0] * b[1] - a[1] * b[0];
 
+        c[0] = (a[2] * b[0] - a[0] * b[2]) * b[2] - (a[0] * b[1] - a[1] * b[0]) * b[1];
+        c[0] = a[2] * b[0] * b[2] - a[0] * b[2] * b[2] - a[0] * b[1] * b[1] - a[1] * b[0] * b[1];
+        c[0] =
+        c[1] = c[2] * b[0] - c[0] * b[2];
+        c[2] = c[0] * b[1] - c[1] * b[0];
+
         return c;
     }
 
@@ -59,10 +65,14 @@ public class MyMath {
         //  * Use dot product to find angle between xzMagnet and xzCamera
 
         //float[] xzTemp = MyMath.crossProduct(magnetVec, gravityVec);
-        float[] xzMagnet = magnetVec;
+        //float[] xzMagnet = MyMath.crossProduct(gravityVec, xzTemp);
+        // faster to just assign something, also this will give correct orientation
+        float[] xzMagnet = {magnetVec[0], 0.0f, magnetVec[2]};
 
-        //float[] xzTemp = MyMath.crossProduct(cameraVec, gravityVec);
-        float[] xzCamera = cameraVec;
+        //xzTemp = MyMath.crossProduct(cameraVec, gravityVec);
+        //float[] xzCamera = MyMath.crossProduct(gravityVec, xzTemp);
+        // faster to just assign something, also this will give correct orientation
+        float[] xzCamera = {cameraVec[0], 0.0f, cameraVec[2]};
 
         float angle = MyMath.angle(xzCamera, xzMagnet);
         angle = MyMath.radToDegrees(angle);

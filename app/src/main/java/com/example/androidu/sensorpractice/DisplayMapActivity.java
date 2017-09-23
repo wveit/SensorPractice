@@ -190,7 +190,7 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
         return SphericalUtil.computeDistanceBetween(currentLoc, new LatLng(lat, lon)) / USER_SPEED;
     }
 
-    private void updateCameraBearing(GoogleMap googleMap, final int bearing) {
+    private void updateCameraBearing(GoogleMap googleMap, final float bearing) {
         if (googleMap == null) return;
         CameraPosition camP = CameraPosition.builder(googleMap.getCameraPosition()).bearing(bearing).build();
         googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(camP));
@@ -231,10 +231,11 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
         float[] gravVector = mSensorData.get(new Integer(SensorService.GRAVITY));
         float[] magnetVector = mSensorData.get(new Integer(SensorService.MAGNETIC_FIELD));
         // map bearing is reversed
-        int bearing = 360 - (int)MyMath.compassBearing(gravVector, magnetVector, mPhoneFrontVector);
+        // todo: take out gravity vector because we only need the magnetometer
+        float bearing = MyMath.compassBearing(gravVector, magnetVector, mPhoneFrontVector);
         // we don't need to give it a tilt (yet)
         //float tilt = MyMath.landscapeTiltAngle(mGravityVector, mPhoneUpVector);
-        if(Math.abs(bearing - mBearing) >= 3) {
+        if(Math.abs(bearing - mBearing) >= 2.0) {
             updateCameraBearing(mMap, bearing);
             mBearing = bearing;
         }
