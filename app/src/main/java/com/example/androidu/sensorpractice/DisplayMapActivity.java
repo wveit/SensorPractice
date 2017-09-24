@@ -95,9 +95,6 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
 
     @Override
     protected void onResume() {
-        if(mSensors != null)
-            mSensors.start();
-
         super.onResume();
 
         // renew gps data
@@ -132,7 +129,7 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
                         mBearing = location.getBearing();
                     }
                     Log.d(TAG, "my current position is " + location.getLatitude() + ", " + location.getLongitude() + " with bearing = " + mBearing);
-                    CameraPosition camPos = CameraPosition.builder(mMap.getCameraPosition()).target(currentLoc).bearing(mBearing).zoom(DEFAULT_ZOOM).build();
+                    CameraPosition camPos = CameraPosition.builder(mMap.getCameraPosition()).target(currentLoc).zoom(DEFAULT_ZOOM).build();
                     mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos), 500, new GoogleMap.CancelableCallback() {
                         @Override
                         public void onFinish() {
@@ -163,12 +160,12 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
                 @Override
                 public void onSuccess(Location location) {
                     currentLoc = new LatLng(location.getLatitude(), location.getLongitude());
-                    CameraPosition camPos = CameraPosition.builder(mMap.getCameraPosition()).target(currentLoc).build();
-                    mMapAnimating = true;
+                    CameraPosition camPos = CameraPosition.builder(mMap.getCameraPosition()).target(currentLoc).zoom(DEFAULT_ZOOM).build();
                     mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camPos), 500, new GoogleMap.CancelableCallback() {
                         @Override
                         public void onFinish() {
-                            mMapAnimating = false;
+                            // start the sensors
+                            mSensors.start();
                         }
 
                         @Override

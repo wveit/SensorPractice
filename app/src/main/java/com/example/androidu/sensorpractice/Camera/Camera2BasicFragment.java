@@ -247,23 +247,40 @@ public class Camera2BasicFragment extends Fragment
      */
     private static Size chooseOptimalSize(Size[] choices, int width, int height, Size aspectRatio) {
         // Collect the supported resolutions that are at least as big as the preview Surface
-        List<Size> bigEnough = new ArrayList<>();
         int w = aspectRatio.getWidth();
         int h = aspectRatio.getHeight();
-        double ratio = (double) h / w;
+        double ratio = (double) w / h;
+        Log.d("C2BF:chooseOptimalSize", "finding preview size for " + height + "x" + width + " ratio=" + (height * 1.0f / width));
+        Log.d("C2BF:chooseOptimalSize", "calculated aspectRatio=" + ratio);
+        List<Size> bigEnough = new ArrayList<>();
+        List<Size> sameRatio = new ArrayList<>();
+
         for (Size option : choices) {
-            if (option.getHeight() == option.getWidth() * ratio &&
-                    option.getWidth() >= width && option.getHeight() >= height) {
-                bigEnough.add(option);
+            float o_width = option.getWidth();
+            float o_height = option.getHeight();
+
+            float[] o_dimensions = {o_width, o_height};
+            float[] a_dimensions = {width, height};
+
+            if(o_height == o_width / ratio) {
+                sameRatio.add(option);
+                if(max(o_dimensions) >= max(a_dimensions) &&
+                   min(o_dimensions) >= min(a_dimensions))
+                    bigEnough.add(option);
             }
         }
 
-        // Pick the smallest of those, assuming we found any
-        if (bigEnough.size() > 0) {
+        // Pick the smallest of sizes that are big enough, assuming we found any
+        if (bigEnough.size() > 0)
             return Collections.min(bigEnough, new CompareSizesByArea());
-        } else {
-            Log.e(TAG, "Couldn't find any suitable preview size");
-            return choices[0];
+        else {
+            // TODO: implement custom ratios
+            // try to pick something with similar aspect ratio
+            Log.e(TAG, "Couldn't find any suitable preview size for " + width + "x" + height);
+            if(sameRatio.size() > 0)
+                return Collections.max(sameRatio, new CompareSizesByArea());
+            else
+                return choices[0];
         }
     }
 
@@ -675,16 +692,33 @@ public class Camera2BasicFragment extends Fragment
     }
     */
 
+    private static float max(float[] arrs) {
+        float max = arrs[0];
+        for(int i=1; i<arrs.length; i++)
+            if(max < arrs[i])
+                max = arrs[i];
+        return max;
+    }
+
+    private static float min(float[] arrs) {
+        float min = arrs[0];
+        for(int i=1; i<arrs.length; i++)
+            if(min > arrs[i])
+                min = arrs[i];
+        return min;
+    }
+
     /**
      * Compares two {@code Size}s based on their areas.
+     * Returns ascending order (smallest first)
+     *
      */
     static class CompareSizesByArea implements Comparator<Size> {
 
         @Override
         public int compare(Size lhs, Size rhs) {
             // We cast here to ensure the multiplications won't overflow
-            return Long.signum((long) lhs.getWidth() * lhs.getHeight() -
-                    (long) rhs.getWidth() * rhs.getHeight());
+            return Long.signum((long) lhs.getWidth() * lhs.getHeight() - (long) rhs.getWidth() * rhs.getHeight());
         }
 
     }

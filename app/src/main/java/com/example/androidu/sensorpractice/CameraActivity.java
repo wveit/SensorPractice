@@ -104,11 +104,11 @@ public class CameraActivity extends AppCompatActivity {
         //float bearing = MyMath.compassBearing(mGravityVector, mMagnetVector, mPhoneFrontVector);
         float bearing = MyMath.compassBearing(mMagnetVector, mPhoneFrontVector);
         if (Math.abs(bearing - mBearing) >= 1.10) {
-            mCamOverlay.setBearing((int) bearing);
+            mCamOverlay.setBearing(Math.round(bearing * 10) / 10.0f);
             mBearing = bearing;
         }
         //mCamOverlay.setTilt((int)MyMath.landscapeTiltAngle(mGravityVector, mPhoneUpVector));
-        mCamOverlay.setTilt((int)MyMath.tiltAngle(mGravityVector, mPhoneUpVector));
+        mCamOverlay.setTilt(Math.round(MyMath.tiltAngle(mGravityVector, mPhoneUpVector) * 10) / 10.0f);
     }
 
     // public interface for when the camera layout is ready for callback

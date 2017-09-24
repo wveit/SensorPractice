@@ -13,8 +13,8 @@ import com.example.androidu.sensorpractice.Utils.MyMath;
 public class CameraOverlayView extends View {
     private static final String TAG = "CameraOverlayView";
     private Paint mPaint;
-    private int mBearing = 0;
-    private int mTilt = 0;
+    private float mBearing = 0.0f;
+    private float mTilt = 0.0f;
 
     public CameraOverlayView(Context context) {
         super(context);
@@ -30,13 +30,13 @@ public class CameraOverlayView extends View {
         int canvasWidth = canvas.getWidth();
 
         mPaint.setColor(0x99FFFFFF);
-        canvas.drawRect(0, 0, 200, 100, mPaint);
-        canvas.drawRect(canvasWidth - 200, 0, canvasWidth, 100, mPaint);
+        canvas.drawRect(0, 0, 220, 100, mPaint);
+        canvas.drawRect(canvasWidth - 220, 0, canvasWidth, 100, mPaint);
 
         mPaint.setColor(0xFF000000);
         mPaint.setTextSize(100);
         canvas.drawText("" + mBearing, 0, 75, mPaint);
-        canvas.drawText("" + mTilt, canvasWidth - 200, 75, mPaint);
+        canvas.drawText("" + mTilt, canvasWidth - 220, 75, mPaint);
         drawVerticalLine(mTilt, canvas);
         drawHorizontalLine(mTilt, canvas);
     }
@@ -78,12 +78,12 @@ public class CameraOverlayView extends View {
     }
 
 
-    public void setBearing(int bearing){
+    public void setBearing(float bearing){
         mBearing = bearing;
         invalidate();
     }
 
-    public void setTilt(int tilt){
+    public void setTilt(float tilt){
         mTilt = tilt;
         invalidate();
     }
