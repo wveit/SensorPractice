@@ -98,7 +98,7 @@ public class MyMath {
         float angle = (float) Math.atan(dx / dy);
         angle = MyMath.radToDegrees(angle);
 
-        if(magnetVec[2] <= -1.0)
+        if(magnetVec[1] < 0.0 && magnetVec[2] <= 0.0)
             return angle;
         else
             return 180 + angle;
@@ -118,7 +118,6 @@ public class MyMath {
         float[] zyGrav = {gravityVec[1], gravityVec[2]};
         float[] zyMag  = {magnetVec[1], magnetVec[2]};
         float zyAngle = (float) Math.acos(dotProduct2D(zyGrav, zyMag) / (magnitude2D(zyGrav) * magnitude2D(zyMag)));
-        float t_z = magnetVec[2] * (float) Math.cos(zyAngle);
 
         // need to correct this
         float[] xyA = {gravityVec[0], gravityVec[1]};
@@ -129,17 +128,20 @@ public class MyMath {
         float[] xzB = {0.0f, magnetVec[2]};
         float xzAngle = (float) Math.acos(dotProduct2D(xzA, xzB) / (magnitude2D(xzA) * magnitude2D(xzB)));
 
-        float t_x = magnetVec[0];// * (float) Math.cos(xyAngle) - magnetVec[1] * (float) Math.sin(xyAngle);
+        // need to do more sensor research, Y-axis seems funky
+        float t_x = magnetVec[0] * (float) Math.cos(xyAngle);// + magnetVec[1] * (float) Math.sin(xyAngle);
+        float t_z = magnetVec[2] * (float) Math.cos(zyAngle);// + magnetVec[1] * (float) Math.sin(zyAngle);
         //Log.d("MyMath", "xyA=(" + xyA[0] + "," + xyA[1] + ") xyB=(" + xyB[0] + "," + xyB[1] + ") angle=" + Math.toDegrees(xyAngle) + " t_x=" + t_x + " magVec={" + magnetVec[0] + "," + magnetVec[1] + "} mAngle=" + Math.toDegrees(xymAngle));
-        Log.d("MyMath", "xz=" + Math.toDegrees(xzAngle) + " zy=" + Math.toDegrees(zyAngle) + " xy=" + Math.toDegrees(xyAngle));
+        //Log.d("MyMath", "xz=" + Math.toDegrees(xzAngle) + " zy=" + Math.toDegrees(zyAngle) + " xy=" + Math.toDegrees(xyAngle));
 
         float dx = t_x;
         float dy = -t_z;
         float angle = (float) Math.atan(dx / dy);
-        angle = MyMath.radToDegrees(angle);// - (float)Math.toDegrees(xzAngle);
-        //angle = (angle + (float)Math.toDegrees(xzAngle)) / 2.0f;
+        angle = (float)Math.toDegrees(angle);// - (float)Math.toDegrees(xzAngle);
+        //angle = (angle - (float)Math.toDegrees(xzAngle)) / 2.0f;
+        Log.d(TAG, "angle: " + angle);
 
-        if(magnetVec[2] < 0.0 && xzAngle < 80.0)
+        if(gravityVec[1] > 0.0 && magnetVec[2] < 0.0) // if upright
             return angle;
         else
             return 180 + angle;

@@ -151,9 +151,6 @@ public class CameraActivity extends AppCompatActivity {
         public void onSensorEvent(SensorEvent event) {
             float[] vals = event.values.clone();
 
-            for(int i=0; i<vals.length; i++)
-                vals[i] = -vals[i];
-
             if(mGravityVector == null) {
                 mGravityVector = vals;
                 return;
