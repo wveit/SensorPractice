@@ -1,6 +1,7 @@
 package com.example.androidu.sensorpractice;
 
 import android.hardware.SensorEvent;
+import android.hardware.SensorManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -18,10 +19,12 @@ public class CameraActivity extends AppCompatActivity {
     private CameraOverlayView mCamOverlay;
     private Camera2BasicFragment mCamFragment;
 
+    private MySensor mAccelerometerSensor;
     private MySensor mGravitySensor;
     private MySensor mMagnetSensor;
     private MySensor mRotationVectorSensor;
 
+    private float[] mAccelVector = {0, 0, 0};
     private float[] mGravityVector = {30, 20, 0};
     private float[] mMagnetVector = {1, 0, 0};
     private float[] mRotationVector = {0, 0, 0};
@@ -34,6 +37,9 @@ public class CameraActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
+
+        // keeps the screen on
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         // hide the action bar (gets fullscreen)
         getSupportActionBar().hide();
@@ -57,6 +63,18 @@ public class CameraActivity extends AppCompatActivity {
         }
 
         // initialize sensors
+        mAccelerometerSensor = new MySensor(this, MySensor.LINEAR_ACCELERATION);
+        mAccelerometerSensor.addListener(new MySensor.Listener() {
+            @Override
+            public void onSensorEvent(SensorEvent event) {
+                if(mAccelVector == null)
+                    mAccelVector = event.values.clone();
+                else
+                    MyMath.lowPass(event.values.clone(), mAccelVector);
+
+                updateDirection();
+            }
+        });
         mGravitySensor = new MySensor(this, MySensor.GRAVITY);
         mGravitySensor.addListener(new GravityListener());
         mMagnetSensor = new MySensor(this, MySensor.MAGNETIC_FIELD);
@@ -81,10 +99,12 @@ public class CameraActivity extends AppCompatActivity {
 
     @Override
     protected void onResume() {
-        if(mGravitySensor.sensorExists() && mMagnetSensor.sensorExists()){
+        if(mGravitySensor.sensorExists())
             mGravitySensor.start();
+        if(mMagnetSensor.sensorExists())
             mMagnetSensor.start();
-        }
+        if(mAccelerometerSensor.sensorExists())
+            mAccelerometerSensor.start();
 
         super.onResume();
     }
@@ -95,6 +115,8 @@ public class CameraActivity extends AppCompatActivity {
             mGravitySensor.stop();
         if(mMagnetSensor.sensorExists())
             mMagnetSensor.stop();
+        if(mAccelerometerSensor.sensorExists())
+            mAccelerometerSensor.stop();
 
         super.onPause();
     }
@@ -102,10 +124,12 @@ public class CameraActivity extends AppCompatActivity {
     private void updateDirection(){
         //Log.d("CameraActivity", "updating sensors info");
         //float bearing = MyMath.compassBearing(mGravityVector, mMagnetVector, mPhoneFrontVector);
-        float bearing = MyMath.compassBearing(mMagnetVector, mPhoneFrontVector);
+
+        float tilt = MyMath.tiltAngle(mGravityVector, mPhoneUpVector);
+        float bearing = MyMath.compassBearing(mMagnetVector, mGravityVector, tilt);
         if (Math.abs(bearing - mBearing) >= 1.10) {
-            mCamOverlay.setBearing(Math.round(bearing * 10) / 10.0f);
             mBearing = bearing;
+            mCamOverlay.setBearing(Math.round(bearing * 10) / 10.0f);
         }
         //mCamOverlay.setTilt((int)MyMath.landscapeTiltAngle(mGravityVector, mPhoneUpVector));
         mCamOverlay.setTilt(Math.round(MyMath.tiltAngle(mGravityVector, mPhoneUpVector) * 10) / 10.0f);

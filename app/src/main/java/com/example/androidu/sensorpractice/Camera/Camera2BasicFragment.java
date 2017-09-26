@@ -250,8 +250,6 @@ public class Camera2BasicFragment extends Fragment
         int w = aspectRatio.getWidth();
         int h = aspectRatio.getHeight();
         double ratio = (double) w / h;
-        Log.d("C2BF:chooseOptimalSize", "finding preview size for " + height + "x" + width + " ratio=" + (height * 1.0f / width));
-        Log.d("C2BF:chooseOptimalSize", "calculated aspectRatio=" + ratio);
         List<Size> bigEnough = new ArrayList<>();
         List<Size> sameRatio = new ArrayList<>();
 

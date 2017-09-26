@@ -7,15 +7,16 @@ import android.content.pm.PackageManager;
 import android.hardware.SensorEvent;
 import android.hardware.SensorManager;
 import android.location.Location;
-import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.util.ArrayMap;
 import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.view.WindowManager;
+import android.widget.LinearLayout;
 
+import com.example.androidu.sensorpractice.Camera.Camera2BasicFragment;
+import com.example.androidu.sensorpractice.Camera.CameraOverlayView;
 import com.example.androidu.sensorpractice.Sensors.MySensor;
 import com.example.androidu.sensorpractice.Sensors.SensorService;
 import com.example.androidu.sensorpractice.Utils.MyMath;
@@ -23,21 +24,23 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.maps.android.SphericalUtil;
 
-import java.util.List;
 import java.util.Map;
 
-public class DisplayMapActivity extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback {
-    private static final String TAG = "DisplayMapActivity";
+public class DisplayARActivity extends AppCompatActivity {
+    private final static String TAG = "DisplayAR";
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 0;
     private static final float DEFAULT_ZOOM = (float) 16.5; // shows the neighborhood
 
+    private CameraOverlayView mCamOverlay;
+    private Camera2BasicFragment mCamFragment;
+    private MapFragment mMapFragment;
     private GoogleMap mMap;
     private FusedLocationProviderClient mFusedLocationClient;
     private Context context;
@@ -49,53 +52,54 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
     private float[] mPhoneUpVector = {0, 1, 0};
     private Map<Integer, float[]> mSensorData = null;
 
-    private float mBearing = 0;
-
-    private boolean mMapAnimating = false;
+    private float mBearing = 0.0f;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_display_map);
+        setContentView(R.layout.activity_display_ar);
 
         // keeps the screen on
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
+        // hide the action bar (gets fullscreen)
+        getSupportActionBar().hide();
+
+        // try to request full screen
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
         context = this;
 
-        findViewById(R.id.locator_button).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                getCurrentLocation();
-            }
-        });
+        // replace the camera container with a basic camera2 fragment
+        if (null == savedInstanceState) {
+            mCamFragment = Camera2BasicFragment.newInstance();
+            mCamOverlay = new CameraOverlayView(context);
+            // can't just add the view to a layout (since it may not exist yet before the camera is initialized)
+            // so we will add the camera overlay whenever the camera preview is ready
+            mCamFragment.setCamLayoutCallback(new CameraActivity.CameraLayoutCallback() {
+                @Override
+                public void setUpLayout(LinearLayout layout) {
+                    layout.addView(mCamOverlay);
+                }
+            });
+            //getFragmentManager().beginTransaction().replace(R.id.ar_cam_container, mCamFragment).commit();
+
+            mMapFragment = new MapFragment();
+            getFragmentManager().beginTransaction().replace(R.id.ar_map_container, mMapFragment).commit();
+            mMapFragment.getMapAsync(new OnMapReadyCallback() {
+                @Override
+                public void onMapReady(GoogleMap googleMap) {
+                    Log.d(TAG, "Google Maps fetched");
+                    mMap = googleMap;
+                    mMap.getUiSettings().setMapToolbarEnabled(false);
+                    mMap.getUiSettings().setMyLocationButtonEnabled(false);
+                    mMap.getUiSettings().setCompassEnabled(false);
+                    getCurrentLocation();
+                }
+            });
+        }
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(context);
-
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(new OnMapReadyCallback() {
-            @Override
-            public void onMapReady(GoogleMap googleMap) {
-                mMap = googleMap;
-                mMap.getUiSettings().setMapToolbarEnabled(false);
-                mMap.getUiSettings().setMyLocationButtonEnabled(false);
-                mMap.getUiSettings().setCompassEnabled(false);
-                getCurrentLocation();
-            }
-        });
-    }
-
-    // overriding onStart to load from db every time the app starts/resumes
-    @Override
-    protected void onStart() {
-        super.onStart();
-    }
-
-    // overriding onStop to "clean up" every time the app is shut down
-    @Override
-    protected void onStop() {
-        super.onStop();
     }
 
     @Override
@@ -187,62 +191,25 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
         mFusedLocationClient.getLastLocation().addOnSuccessListener(a, listener);
     }
 
-    // return the distance from user in minutes
-    private double getTimeFromUser(double lat, double lon) {
-        // adjust this constant to change the reading
-        final double USER_SPEED = 67.8; // in meters per hour
-        return SphericalUtil.computeDistanceBetween(currentLoc, new LatLng(lat, lon)) / USER_SPEED;
-    }
-
     private void updateCameraBearing(GoogleMap googleMap, final float bearing) {
         if (googleMap == null) return;
         CameraPosition camP = CameraPosition.builder(googleMap.getCameraPosition()).bearing(bearing).build();
         googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(camP));
-        /*
-        if (mMapAnimating)
-            googleMap.stopAnimation();
-        mMapAnimating = true;
-        googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(camP), 333, new GoogleMap.CancelableCallback() {
-            @Override
-            public void onFinish() {
-                mMapAnimating = false;
-            }
-
-            @Override
-            public void onCancel() {
-                // supposed to do something?
-                mMapAnimating = false;
-            }
-        });
-        */
     }
 
-    private void updateDirection() {
-        // the below was an experiment that didn't quite work out
-        // it can only get the compass bearing when the device is lying down
-        /*
-        float[] R = new float[9];
-        float[] I = new float[9];
-
-        if(SensorManager.getRotationMatrix(R, I, mSensorData.get(new Integer(SensorService.GRAVITY)), mSensorData.get(new Integer(SensorService.MAGNETIC_FIELD)))) {
-            float[] angles = new float[3];
-            SensorManager.getOrientation(R, angles);
-            double angle = angles[0] * 180.0 / Math.PI;
-            Log.d("MAP ACTIVITY", "angle = " + angle);
-
-            updateCameraBearing(mMap, (int)Math.round(angle));
-        }
-        */
-
+    private void updateDirection(){
         float[] gravityVector = mSensorData.get(new Integer(SensorService.GRAVITY));
         float[] magnetVector = mSensorData.get(new Integer(SensorService.MAGNETIC_FIELD));
+
         float tilt = MyMath.tiltAngle(gravityVector, mPhoneUpVector);
         float bearing = MyMath.compassBearing(magnetVector, gravityVector, tilt);
-
-        if(Math.abs(bearing - mBearing) >= 1.10) {
+        if (Math.abs(bearing - mBearing) >= 1.10) {
             mBearing = bearing;
+            mCamOverlay.setBearing(Math.round(bearing * 10) / 10.0f);
             updateCameraBearing(mMap, bearing);
         }
+        //mCamOverlay.setTilt((int)MyMath.landscapeTiltAngle(mGravityVector, mPhoneUpVector));
+        mCamOverlay.setTilt((tilt * 10) / 10.0f);
     }
 
     private void handleSensorEvent(SensorEvent event) {
@@ -260,22 +227,5 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
 
         if(mSensorData.size() > 1)
             updateDirection();
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String permissions[],
-                                           @NonNull int[] grantResults) {
-        Log.d(TAG, "permission request answered");
-        switch (requestCode) {
-            case PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION:
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
-                    Log.d(TAG, "permission granted");
-                break;
-        }
-        // this means the device will keep asking for permission until it is granted
-        // TODO: display a proper error message
-        getCurrentLocation();
     }
 }
