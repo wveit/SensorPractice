@@ -260,7 +260,9 @@ public class Camera2BasicFragment extends Fragment
             float[] o_dimensions = {o_width, o_height};
             float[] a_dimensions = {width, height};
 
-            if(o_height == o_width / ratio) {
+            Log.d(TAG, "checking " + o_width + "x" + o_height);
+
+            if(o_height == o_width / ratio || o_width == o_height / ratio || o_height >= width || o_width >= height) {
                 sameRatio.add(option);
                 if(max(o_dimensions) >= max(a_dimensions) &&
                    min(o_dimensions) >= min(a_dimensions))
