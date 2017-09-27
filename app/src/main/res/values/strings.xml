@@ -2,4 +2,7 @@
     <string name="app_name">ARPlayground</string>
     <string name="permission_request">This sample needs camera permission.</string>
     <string name="camera_error">This device doesn\'t support Camera2 API.</string>
+    <string name="gps_permission_rationale">We need to send your GPS coordinates to PRC</string>
+    <string name="gps_permission_denied_explanation">It seems you may have blocked us and PRC. That\'s not cool!</string>
+    <string name="settings">Unblock now!</string>
 </resources>

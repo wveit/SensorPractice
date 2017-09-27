@@ -20,24 +20,34 @@ public class MySensor {
     private SensorManager mSensorManager;
     private Sensor mSensor;
     private ArrayList<Listener> mListenerList = new ArrayList<Listener>();
+    private boolean mRunning;
 
     public MySensor(Context context, int sensorCode){
         mSensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         mSensor = mSensorManager.getDefaultSensor(sensorCode);
+        mRunning = false;
     }
 
     public boolean sensorExists(){
         return mSensor != null;
     }
 
+    public boolean running() {
+        return mRunning;
+    }
+
     public void start(){
-        if(sensorExists())
+        if(sensorExists()) {
             mSensorManager.registerListener(mListener, mSensor, SensorManager.SENSOR_DELAY_FASTEST);
+            mRunning = true;
+        }
     }
 
     public void stop(){
-        if(sensorExists())
+        if(sensorExists()) {
             mSensorManager.unregisterListener(mListener);
+            mRunning = false;
+        }
     }
 
     public void addListener(Listener listener){
