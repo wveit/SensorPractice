@@ -122,17 +122,15 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     private void updateDirection(){
-        //Log.d("CameraActivity", "updating sensors info");
-        //float bearing = MyMath.compassBearing(mGravityVector, mMagnetVector, mPhoneFrontVector);
-
-        float tilt = MyMath.tiltAngle(mGravityVector, mPhoneUpVector);
-        float bearing = MyMath.compassBearing(mMagnetVector, mGravityVector, tilt);
+        float tilt = MyMath.landscapeTiltAngle(mGravityVector, mPhoneUpVector);
+        float bearing = MyMath.compassBearing(mGravityVector, mMagnetVector, mPhoneFrontVector);
+        //float bearing = MyMath.compassBearing(mMagnetVector, mGravityVector, tilt);
         if (Math.abs(bearing - mBearing) >= 1.10) {
             mBearing = bearing;
             mCamOverlay.setBearing(Math.round(bearing * 10) / 10.0f);
         }
-        //mCamOverlay.setTilt((int)MyMath.landscapeTiltAngle(mGravityVector, mPhoneUpVector));
-        mCamOverlay.setTilt(Math.round(MyMath.tiltAngle(mGravityVector, mPhoneUpVector) * 10) / 10.0f);
+
+        mCamOverlay.setTilt(Math.round(tilt * 10) / 10.0f);
     }
 
     // public interface for when the camera layout is ready for callback

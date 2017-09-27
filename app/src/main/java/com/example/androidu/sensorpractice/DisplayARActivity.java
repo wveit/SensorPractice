@@ -201,8 +201,8 @@ public class DisplayARActivity extends AppCompatActivity {
         float[] gravityVector = mSensorData.get(new Integer(SensorService.GRAVITY));
         float[] magnetVector = mSensorData.get(new Integer(SensorService.MAGNETIC_FIELD));
 
-        float tilt = MyMath.tiltAngle(gravityVector, mPhoneUpVector);
-        float bearing = MyMath.compassBearing(magnetVector, gravityVector, tilt);
+        float tilt = MyMath.landscapeTiltAngle(gravityVector, mPhoneUpVector);
+        float bearing = MyMath.compassBearing(magnetVector, gravityVector, mPhoneFrontVector);
         if (Math.abs(bearing - mBearing) >= 1.10) {
             mBearing = bearing;
             mCamOverlay.setBearing(Math.round(bearing * 10) / 10.0f);

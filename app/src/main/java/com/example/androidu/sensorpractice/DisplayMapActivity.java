@@ -236,8 +236,8 @@ public class DisplayMapActivity extends AppCompatActivity implements ActivityCom
 
         float[] gravityVector = mSensorData.get(new Integer(SensorService.GRAVITY));
         float[] magnetVector = mSensorData.get(new Integer(SensorService.MAGNETIC_FIELD));
-        float tilt = MyMath.tiltAngle(gravityVector, mPhoneUpVector);
-        float bearing = MyMath.compassBearing(magnetVector, gravityVector, tilt);
+        //float tilt = MyMath.landscapeTiltAngle(gravityVector, mPhoneUpVector);
+        float bearing = 360.0f - MyMath.compassBearing(gravityVector, magnetVector, mPhoneFrontVector);
 
         if(Math.abs(bearing - mBearing) >= 1.10) {
             mBearing = bearing;
