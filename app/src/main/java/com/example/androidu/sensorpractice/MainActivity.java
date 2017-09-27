@@ -15,6 +15,7 @@ public class MainActivity extends AppCompatActivity {
     Button mMapButton;
     Button mCamera1Button;
     Button mOpenGL1Button;
+    Button mARViewButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
         mMapButton = (Button) findViewById(R.id.btn_map);
         mCamera1Button = (Button) findViewById(R.id.btn_camera1);
         mOpenGL1Button = (Button) findViewById(R.id.btn_opengl1);
+        mARViewButton = (Button) findViewById(R.id.btn_arview);
 
         mSensorListButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -45,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
 
         mMapButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
+            public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this, DisplayMapActivity.class);
                 startActivity(intent);
             }
@@ -67,5 +69,12 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        mARViewButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, DisplayARActivity.class);
+                startActivity(intent);
+            }
+        });
     }
 }

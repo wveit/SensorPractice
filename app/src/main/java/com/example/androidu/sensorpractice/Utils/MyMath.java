@@ -60,15 +60,11 @@ public class MyMath {
         //  * Project cameraVec onto earth's xz plane -> xzCamera
         //  * Use dot product to find angle between xzMagnet and xzCamera
 
-        //float[] xzTemp = MyMath.crossProduct(magnetVec, gravityVec);
-        //float[] xzMagnet = MyMath.crossProduct(gravityVec, xzTemp);
-        // faster to just assign something, also this will give correct orientation
-        float[] xzMagnet = {magnetVec[0], 0.0f, magnetVec[2]};
+        float[] xzTemp = MyMath.crossProduct(magnetVec, gravityVec);
+        float[] xzMagnet = MyMath.crossProduct(gravityVec, xzTemp);
 
-        //xzTemp = MyMath.crossProduct(cameraVec, gravityVec);
-        //float[] xzCamera = MyMath.crossProduct(gravityVec, xzTemp);
-        // faster to just assign something, also this will give correct orientation
-        float[] xzCamera = {cameraVec[0], 0.0f, cameraVec[2]};
+        xzTemp = MyMath.crossProduct(cameraVec, gravityVec);
+        float[] xzCamera = MyMath.crossProduct(gravityVec, xzTemp);
 
         float angle = MyMath.angle(xzCamera, xzMagnet);
         angle = MyMath.radToDegrees(angle);
@@ -80,28 +76,6 @@ public class MyMath {
             return angle;
         else
             return 360 - angle;
-    }
-
-    public static float compassBearing(float[] magnetVec, float[] cameraVec){
-        // Information we have:
-        //  + gravityVec: A vector representing the direction and magnitude of gravity in camera coordinate system
-        //  + magnetVec: A vector representing the direction and magnitude of earth's magnetic field from camera coordinate system
-        //  + cameraVec: A vector representing the direction of the camera in phone coordinate system
-
-        // Algorithm for finding compass bearing:
-        //  * Project magnetVec onto earth's xz plane -> xzMagnet
-        //  * Project cameraVec onto earth's xz plane -> xzCamera
-        //  * Use dot product to find angle between xzMagnet and xzCamera
-
-        float dx = magnetVec[0] - cameraVec[0];
-        float dy = magnetVec[2] - cameraVec[2];
-        float angle = (float) Math.atan(dx / dy);
-        angle = MyMath.radToDegrees(angle);
-
-        if(magnetVec[2] <= -1.0)
-            return angle;
-        else
-            return 180 + angle;
     }
 
     public static String vec2String(float[] vec){
@@ -129,16 +103,6 @@ public class MyMath {
         }
         else
             return 360 - angle;
-    }
-
-    // simpler tilt angle math, currently only works with gravity vectors
-    public static float tiltAngle(float[] gravityVec, float[] phoneUpVec) {
-        float theta = (float) Math.atan(-gravityVec[1] / gravityVec[0]);
-        theta = MyMath.radToDegrees(theta);
-
-        if(gravityVec[0] < 0.0) theta += 180;
-
-        return theta;
     }
 
     // taken from http://blog.thomnichols.org/2011/08/smoothing-sensor-data-with-a-low-pass-filter
