@@ -60,6 +60,11 @@ public class MyMath {
         //  * Project cameraVec onto earth's xz plane -> xzCamera
         //  * Use dot product to find angle between xzMagnet and xzCamera
 
+        if(gravityVec[2] >= 9.0)
+            cameraVec = new float[]{0, 1, 0};
+        else if(gravityVec[2] <= -9.0)
+            cameraVec = new float[]{0, -1, 0};
+
         float[] xzTemp = MyMath.crossProduct(magnetVec, gravityVec);
         float[] xzMagnet = MyMath.crossProduct(gravityVec, xzTemp);
 

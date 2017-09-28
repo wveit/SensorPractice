@@ -11,6 +11,8 @@ android {
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         resValue "string", "google_maps_key", (project.findProperty("GOOGLE_MAPS_API_KEY") ?: "")
+        resValue "string", "yelp_fusion_id", (project.findProperty("YELP_FUSION_ID") ?: "")
+        resValue "string", "yelp_fusion_secret", (project.findProperty("YELP_FUSION_SECRET") ?: "")
     }
     buildTypes {
         release {
@@ -34,7 +36,6 @@ dependencies {
     compile 'com.android.volley:volley:1.0.0'
     compile 'com.google.android.gms:play-services-location:11.0.4'
     compile 'com.google.android.gms:play-services-maps:11.0.4'
-    compile 'com.google.android.gms:play-services-places:11.0.4'
     compile 'com.google.maps.android:android-maps-utils:0.5+'
     testCompile 'junit:junit:4.12'
 }

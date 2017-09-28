@@ -29,8 +29,10 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import com.android.volley.toolbox.StringRequest;
 import com.example.androidu.sensorpractice.Camera.Camera2BasicFragment;
 import com.example.androidu.sensorpractice.Camera.CameraOverlayView;
+import com.example.androidu.sensorpractice.Network.Interface;
 import com.example.androidu.sensorpractice.Sensors.MySensor;
 import com.example.androidu.sensorpractice.Sensors.SensorService;
 import com.example.androidu.sensorpractice.Utils.MyMath;
@@ -49,9 +51,6 @@ import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResponse;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.location.SettingsClient;
-import com.google.android.gms.location.places.PlaceLikelihood;
-import com.google.android.gms.location.places.PlaceLikelihoodBuffer;
-import com.google.android.gms.location.places.Places;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
@@ -93,14 +92,14 @@ public class DisplayARActivity extends AppCompatActivity {
      */
     private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 2000;
 
+    private static final long DATA_NETWORK_QUERY_INTERVAL = 30000; // 30 sec
+
     /**
      * The fastest rate for active location updates. Exact. Updates will never be more frequent
      * than this value.
      */
     private static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS =
             UPDATE_INTERVAL_IN_MILLISECONDS / 2;
-
-    private static final long PLACES_QUERY_INTERVAL = 20000; // in milliseconds
 
     // Keys for storing activity state in the Bundle.
     private final static String KEY_REQUESTING_LOCATION_UPDATES = "requesting-location-updates";
@@ -149,15 +148,14 @@ public class DisplayARActivity extends AppCompatActivity {
      */
     private String mLastUpdateTime;
 
-    private MapView mMapView;
     private MapFragment mMapFragment;
     private GoogleMap mMap;
     private Context context;
 
-    private GoogleApiClient mGoogleApiClient;
-    private long mLastQueryTime;
-
     private SensorService mSensors;
+
+    private boolean mDataConnected;
+    private long mLastDataQuery;
 
     private float[] mPhoneFrontVector = {0, 0, -1};
     private float[] mPhoneUpVector = {0, 1, 0};
@@ -190,32 +188,12 @@ public class DisplayARActivity extends AppCompatActivity {
         mRequestingLocationUpdates = false;
         mLastUpdateTime = "";
 
+        // setting up data network
+        mDataConnected = false;
+        mLastDataQuery = 0;
+
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         mSettingsClient = LocationServices.getSettingsClient(this);
-
-        mGoogleApiClient = new GoogleApiClient
-                .Builder(context)
-                .addApi(LocationServices.API)
-                .addApi(Places.GEO_DATA_API)
-                .addApi(Places.PLACE_DETECTION_API)
-                .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
-                    @Override
-                    public void onConnected(@Nullable Bundle bundle) {
-                        Log.d(TAG, "oh wow!...");
-                    }
-
-                    @Override
-                    public void onConnectionSuspended(int i) {
-                        Log.d(TAG, "ah well...");
-                    }
-                })
-                .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
-                    @Override
-                    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-                        Log.d(TAG, "oh no...");
-                    }
-                })
-                .build();
 
         // Kick off the process of building the LocationCallback, LocationRequest, and
         // LocationSettingsRequest objects.
@@ -265,8 +243,6 @@ public class DisplayARActivity extends AppCompatActivity {
             params.width = (int) Math.round(min_dim / 2.15);
             mapLayout.setLayoutParams(params);
         }
-
-        //mFusedLocationClient = LocationServices.getFusedLocationProviderClient(context);
     }
 
     @Override
@@ -292,6 +268,45 @@ public class DisplayARActivity extends AppCompatActivity {
 
         if(mRequestingLocationUpdates)
             stopLocationUpdates();
+    }
+
+    private void connectDataNetwork() {
+        StringRequest sr = Interface.getInstance(context).authenticateYelp(new Interface.AuthenticationCallback() {
+            @Override
+            public void onSuccess() {
+                Log.d(TAG, "Received Yelp authentication confirmation!");
+                mDataConnected = true;
+                Toast.makeText(context, "Yelp authenticated", Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            public void onFailure() {
+                Log.d(TAG, "Uh oh! Something went wrong!");
+            }
+        });
+
+        // do something to sr (maybe cancel if it's taking too long)
+    }
+
+    private void queryNearbyLocations() {
+        long time = System.currentTimeMillis();
+        if(time - mLastDataQuery <= DATA_NETWORK_QUERY_INTERVAL) return;
+
+        Log.d(TAG, "querying nearby locations");
+        StringRequest sr = Interface.getInstance(context).queryYelp(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude(), new Interface.NetworkCallback() {
+            @Override
+            public void onResponse(String response) {
+                //Log.d(TAG, "Nearby locations:\n" + response);
+                Toast.makeText(context, "Retrieved: " + response, Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            public void onError(String error) {
+                Toast.makeText(context, "Error: " + error, Toast.LENGTH_LONG).show();
+            }
+        });
+
+        mLastDataQuery = time;
     }
 
     /**
@@ -346,44 +361,15 @@ public class DisplayARActivity extends AppCompatActivity {
                 mMap.moveCamera(CameraUpdateFactory.newCameraPosition(camPos));
                 */
 
-                queryNearbyPlaces();
+                // data network
+                if(mDataConnected)
+                    queryNearbyLocations();
 
                 // if sensors are not running, start them
                 if(!mSensors.running())
                     mSensors.start();
             }
         };
-    }
-
-    private void queryNearbyPlaces() {
-        long time = System.currentTimeMillis();
-
-        if(time - mLastQueryTime <= PLACES_QUERY_INTERVAL) // make sure we don't excessively query places over this amount of time
-            return;
-
-        // also suppress warnings because it's silly to ask and check for permissions inside
-        // a method that can only start if said permissions are granted (Android is WEIRD!)
-        @SuppressWarnings("MissingPermission") final
-        PendingResult<PlaceLikelihoodBuffer> result = Places.PlaceDetectionApi
-                .getCurrentPlace(mGoogleApiClient, null);
-
-        result.setResultCallback(new ResultCallback<PlaceLikelihoodBuffer>() {
-            @Override
-            public void onResult(PlaceLikelihoodBuffer likelyPlaces) {
-                Log.i("Place", "onResult");
-                if (likelyPlaces.getCount() <= 0) {
-                    Toast.makeText(context, "No place of interest nearby", Toast.LENGTH_SHORT).show();
-                }
-                for (PlaceLikelihood placeLikelihood : likelyPlaces) {
-                    Log.i("Place", String.format("Place '%s' has likelihood: %g",
-                            placeLikelihood.getPlace().getName(),
-                            placeLikelihood.getLikelihood()));
-                }
-                likelyPlaces.release();
-            }
-        });
-
-        mLastQueryTime = time;
     }
 
     /**
@@ -463,12 +449,11 @@ public class DisplayARActivity extends AppCompatActivity {
                         mMap.setIndoorEnabled(true);
                         mMap.setBuildingsEnabled(true);
 
+                        // setup data network
+                        connectDataNetwork();
+
                         // setup sensors
                         mSensorData = new ArrayMap<>();
-
-                        // setup google api connection
-                        mLastQueryTime = 0; // essentially forces Places to query immediately
-                        mGoogleApiClient.connect();
                     }
                 })
                 .addOnFailureListener(this, new OnFailureListener() {
@@ -517,7 +502,6 @@ public class DisplayARActivity extends AppCompatActivity {
                     public void onComplete(@NonNull Task<Void> task) {
                         mRequestingLocationUpdates = false;
                         mSensors.stop();
-                        mGoogleApiClient.disconnect();
                     }
                 });
     }
@@ -538,11 +522,11 @@ public class DisplayARActivity extends AppCompatActivity {
         float[] magnetVector = mSensorData.get(new Integer(SensorService.MAGNETIC_FIELD));
 
         float tilt = MyMath.landscapeTiltAngle(gravityVector, mPhoneUpVector);
-        float bearing = MyMath.compassBearing(magnetVector, gravityVector, mPhoneFrontVector);
-        if (Math.abs(bearing - mBearing) >= 1.15) {
+        float bearing = MyMath.compassBearing(gravityVector, magnetVector, mPhoneFrontVector);
+        if (Math.abs(bearing - mBearing) >= 1.10) {
             mBearing = bearing;
             mCamOverlay.setBearing(Math.round(bearing * 10) / 10.0f);
-            updateCameraBearing(mMap, bearing);
+            updateCameraBearing(mMap, 360 - bearing);
         }
         //mCamOverlay.setTilt((int)MyMath.landscapeTiltAngle(mGravityVector, mPhoneUpVector));
         mCamOverlay.setTilt((tilt * 10) / 10.0f);
