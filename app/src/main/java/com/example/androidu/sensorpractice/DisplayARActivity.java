@@ -15,6 +15,7 @@ import android.net.Uri;
 import android.os.Looper;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.util.ArrayMap;
@@ -33,8 +34,12 @@ import com.example.androidu.sensorpractice.Camera.CameraOverlayView;
 import com.example.androidu.sensorpractice.Sensors.MySensor;
 import com.example.androidu.sensorpractice.Sensors.SensorService;
 import com.example.androidu.sensorpractice.Utils.MyMath;
+import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResolvableApiException;
+import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
@@ -44,6 +49,9 @@ import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResponse;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.location.SettingsClient;
+import com.google.android.gms.location.places.PlaceLikelihood;
+import com.google.android.gms.location.places.PlaceLikelihoodBuffer;
+import com.google.android.gms.location.places.Places;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
@@ -83,7 +91,7 @@ public class DisplayARActivity extends AppCompatActivity {
     /**
      * The desired interval for location updates. Inexact. Updates may be more or less frequent.
      */
-    private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
+    private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 2000;
 
     /**
      * The fastest rate for active location updates. Exact. Updates will never be more frequent
@@ -91,6 +99,8 @@ public class DisplayARActivity extends AppCompatActivity {
      */
     private static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS =
             UPDATE_INTERVAL_IN_MILLISECONDS / 2;
+
+    private static final long PLACES_QUERY_INTERVAL = 20000; // in milliseconds
 
     // Keys for storing activity state in the Bundle.
     private final static String KEY_REQUESTING_LOCATION_UPDATES = "requesting-location-updates";
@@ -144,6 +154,9 @@ public class DisplayARActivity extends AppCompatActivity {
     private GoogleMap mMap;
     private Context context;
 
+    private GoogleApiClient mGoogleApiClient;
+    private long mLastQueryTime;
+
     private SensorService mSensors;
 
     private float[] mPhoneFrontVector = {0, 0, -1};
@@ -179,6 +192,30 @@ public class DisplayARActivity extends AppCompatActivity {
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         mSettingsClient = LocationServices.getSettingsClient(this);
+
+        mGoogleApiClient = new GoogleApiClient
+                .Builder(context)
+                .addApi(LocationServices.API)
+                .addApi(Places.GEO_DATA_API)
+                .addApi(Places.PLACE_DETECTION_API)
+                .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
+                    @Override
+                    public void onConnected(@Nullable Bundle bundle) {
+                        Log.d(TAG, "oh wow!...");
+                    }
+
+                    @Override
+                    public void onConnectionSuspended(int i) {
+                        Log.d(TAG, "ah well...");
+                    }
+                })
+                .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
+                    @Override
+                    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+                        Log.d(TAG, "oh no...");
+                    }
+                })
+                .build();
 
         // Kick off the process of building the LocationCallback, LocationRequest, and
         // LocationSettingsRequest objects.
@@ -282,7 +319,6 @@ public class DisplayARActivity extends AppCompatActivity {
         // Sets the fastest rate for active location updates. This interval is exact, and your
         // application will never receive updates faster than this value.
         mLocationRequest.setFastestInterval(FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS);
-
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
     }
 
@@ -297,8 +333,9 @@ public class DisplayARActivity extends AppCompatActivity {
 
                 mCurrentLocation = locationResult.getLastLocation();
                 mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
-                mBearing = mCurrentLocation.getBearing();
+                //mBearing = mCurrentLocation.getBearing();
 
+                /*
                 CameraPosition camPos = CameraPosition
                         .builder(mMap.getCameraPosition())
                         .target(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()))
@@ -307,12 +344,46 @@ public class DisplayARActivity extends AppCompatActivity {
                         .tilt(CAMERA_TILT)
                         .build();
                 mMap.moveCamera(CameraUpdateFactory.newCameraPosition(camPos));
+                */
+
+                queryNearbyPlaces();
 
                 // if sensors are not running, start them
                 if(!mSensors.running())
                     mSensors.start();
             }
         };
+    }
+
+    private void queryNearbyPlaces() {
+        long time = System.currentTimeMillis();
+
+        if(time - mLastQueryTime <= PLACES_QUERY_INTERVAL) // make sure we don't excessively query places over this amount of time
+            return;
+
+        // also suppress warnings because it's silly to ask and check for permissions inside
+        // a method that can only start if said permissions are granted (Android is WEIRD!)
+        @SuppressWarnings("MissingPermission") final
+        PendingResult<PlaceLikelihoodBuffer> result = Places.PlaceDetectionApi
+                .getCurrentPlace(mGoogleApiClient, null);
+
+        result.setResultCallback(new ResultCallback<PlaceLikelihoodBuffer>() {
+            @Override
+            public void onResult(PlaceLikelihoodBuffer likelyPlaces) {
+                Log.i("Place", "onResult");
+                if (likelyPlaces.getCount() <= 0) {
+                    Toast.makeText(context, "No place of interest nearby", Toast.LENGTH_SHORT).show();
+                }
+                for (PlaceLikelihood placeLikelihood : likelyPlaces) {
+                    Log.i("Place", String.format("Place '%s' has likelihood: %g",
+                            placeLikelihood.getPlace().getName(),
+                            placeLikelihood.getLikelihood()));
+                }
+                likelyPlaces.release();
+            }
+        });
+
+        mLastQueryTime = time;
     }
 
     /**
@@ -394,6 +465,10 @@ public class DisplayARActivity extends AppCompatActivity {
 
                         // setup sensors
                         mSensorData = new ArrayMap<>();
+
+                        // setup google api connection
+                        mLastQueryTime = 0; // essentially forces Places to query immediately
+                        mGoogleApiClient.connect();
                     }
                 })
                 .addOnFailureListener(this, new OnFailureListener() {
@@ -442,6 +517,7 @@ public class DisplayARActivity extends AppCompatActivity {
                     public void onComplete(@NonNull Task<Void> task) {
                         mRequestingLocationUpdates = false;
                         mSensors.stop();
+                        mGoogleApiClient.disconnect();
                     }
                 });
     }
@@ -450,7 +526,9 @@ public class DisplayARActivity extends AppCompatActivity {
         if (googleMap == null) return;
         CameraPosition camP = CameraPosition.builder(googleMap.getCameraPosition())
                 .target(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()))
+                .zoom(DEFAULT_ZOOM)
                 .bearing(bearing)
+                .tilt(CAMERA_TILT)
                 .build();
         googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(camP));
     }
@@ -461,7 +539,7 @@ public class DisplayARActivity extends AppCompatActivity {
 
         float tilt = MyMath.landscapeTiltAngle(gravityVector, mPhoneUpVector);
         float bearing = MyMath.compassBearing(magnetVector, gravityVector, mPhoneFrontVector);
-        if (Math.abs(bearing - mBearing) >= 1.10) {
+        if (Math.abs(bearing - mBearing) >= 1.15) {
             mBearing = bearing;
             mCamOverlay.setBearing(Math.round(bearing * 10) / 10.0f);
             updateCameraBearing(mMap, bearing);
