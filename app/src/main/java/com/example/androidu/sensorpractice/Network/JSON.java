@@ -36,6 +36,7 @@ public final class JSON {
         JSONArray businesses = searchObj.getJSONArray(YELP_API_SEARCH_BUSINESSES);
 
         int size = searchObj.getInt(YELP_API_SEARCH_TOTAL);
+        if(size > 3) size = 3;
         String[] titles = new String[size];
 
         for(int i=0; i<size; i++) {

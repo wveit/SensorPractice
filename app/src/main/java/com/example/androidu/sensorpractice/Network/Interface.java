@@ -116,7 +116,7 @@ public final class Interface {
     public StringRequest queryYelp(double lat, double lon, final NetworkCallback nc) {
         // Instantiate the RequestQueue.
         RequestQueue queue = getRequestQueue();
-        String url ="https://api.yelp.com/v3/businesses/search?latitude=" + (int)Math.round(lat) + "&longitude=" + (int)Math.round(lon) + "&radius=1000";
+        String url ="https://api.yelp.com/v3/businesses/search?latitude=" + (int)Math.round(lat) + "&longitude=" + (int)Math.round(lon) + "&limit=3";
 
         // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
