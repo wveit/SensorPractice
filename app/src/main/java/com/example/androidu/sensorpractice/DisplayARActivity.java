@@ -18,10 +18,12 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.Fragment;
 import android.support.v4.util.ArrayMap;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -32,6 +34,8 @@ import android.widget.Toast;
 import com.android.volley.toolbox.StringRequest;
 import com.example.androidu.sensorpractice.Camera.Camera2BasicFragment;
 import com.example.androidu.sensorpractice.Camera.CameraOverlayView;
+import com.example.androidu.sensorpractice.GL.GLFragment;
+import com.example.androidu.sensorpractice.GL.GLView;
 import com.example.androidu.sensorpractice.Network.Interface;
 import com.example.androidu.sensorpractice.Sensors.MySensor;
 import com.example.androidu.sensorpractice.Sensors.SensorService;
@@ -74,7 +78,9 @@ public class DisplayARActivity extends AppCompatActivity {
     private static final float DEFAULT_ZOOM = 17.75f; // shows the neighborhood
     private static final float CAMERA_TILT = 88.5f; // shows 3D view
 
-    private CameraOverlayView mCamOverlay;
+    //private CameraOverlayView mCamOverlay;
+    //private View mCamOverlay;
+    private GLFragment mGLFragment;
     private Camera2BasicFragment mCamFragment;
 
     /**
@@ -203,18 +209,22 @@ public class DisplayARActivity extends AppCompatActivity {
 
         // replace the camera container with a basic camera2 fragment
         if (null == savedInstanceState) {
+            // initialize camera view (bottom)
             mCamFragment = Camera2BasicFragment.newInstance();
-            mCamOverlay = new CameraOverlayView(context);
-            // can't just add the view to a layout (since it may not exist yet before the camera is initialized)
-            // so we will add the camera overlay whenever the camera preview is ready
-            mCamFragment.setCamLayoutCallback(new CameraActivity.CameraLayoutCallback() {
-                @Override
-                public void setUpLayout(LinearLayout layout) {
-                    layout.addView(mCamOverlay);
-                }
-            });
             getFragmentManager().beginTransaction().add(R.id.ar_cam_container, mCamFragment).commit();
 
+            // initialize gl view (middle)
+            mGLFragment = new GLFragment();
+            getFragmentManager().beginTransaction().add(R.id.ar_gl_container, mGLFragment).commit();
+            /*
+            FrameLayout glLayout = (FrameLayout) findViewById(R.id.ar_gl_container);
+            ViewGroup.LayoutParams glParams = glLayout.getLayoutParams();
+            glParams.height = (int) Math.round(min_dim / 2.0);
+            glParams.width = (int) Math.round(min_dim / 2.0);
+            glLayout.setLayoutParams(glParams);
+            */
+
+            // initialize map view (top)
             mMapFragment = MapFragment.newInstance();
             mMapFragment.getMapAsync(new OnMapReadyCallback() {
                 @Override
@@ -525,11 +535,10 @@ public class DisplayARActivity extends AppCompatActivity {
         float bearing = MyMath.compassBearing(gravityVector, magnetVector, mPhoneFrontVector);
         if (Math.abs(bearing - mBearing) >= 1.10) {
             mBearing = bearing;
-            mCamOverlay.setBearing(Math.round(bearing * 10) / 10.0f);
+            //((CameraOverlayView) mCamOverlay).setBearing(Math.round(bearing * 10) / 10.0f);
             updateCameraBearing(mMap, 360 - bearing);
         }
-        //mCamOverlay.setTilt((int)MyMath.landscapeTiltAngle(mGravityVector, mPhoneUpVector));
-        mCamOverlay.setTilt((tilt * 10) / 10.0f);
+        //((CameraOverlayView) mCamOverlay).setTilt((tilt * 10) / 10.0f);
     }
 
     private void handleSensorEvent(SensorEvent event) {

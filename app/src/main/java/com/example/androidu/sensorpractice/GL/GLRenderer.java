@@ -25,6 +25,7 @@ public class GLRenderer implements GLSurfaceView.Renderer{
     @Override
     public void onDrawFrame(GL10 gl) {
         Log.d("GLRenderer", "frame rendered");
+        //gl.glClear(GL10.GL_COLOR_BUFFER_BIT);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
         if(mTriangle != null) {
@@ -40,7 +41,9 @@ public class GLRenderer implements GLSurfaceView.Renderer{
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         // set background frame color
-        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        //gl.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        //GLES20.glClearColor();
     }
 
     @Override
