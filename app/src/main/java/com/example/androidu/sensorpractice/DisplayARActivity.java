@@ -536,8 +536,10 @@ public class DisplayARActivity extends AppCompatActivity {
         if (Math.abs(bearing - mBearing) >= 1.10) {
             mBearing = bearing;
             //((CameraOverlayView) mCamOverlay).setBearing(Math.round(bearing * 10) / 10.0f);
+            mGLFragment.setBearing(Math.round(bearing * 10) / 10.0f);
             updateCameraBearing(mMap, 360 - bearing);
         }
+        mGLFragment.setTilt((tilt * 10) / 10.0f);
         //((CameraOverlayView) mCamOverlay).setTilt((tilt * 10) / 10.0f);
     }
 

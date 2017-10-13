@@ -37,11 +37,13 @@ public class GLView extends GLSurfaceView {
 
     public void setBearing(double bearing) {
         mBearing = bearing;
+        mRenderer.setBearing(bearing);
         requestRender();
     }
 
     public void setTilt(double tilt) {
         mTilt = tilt;
+        mRenderer.setTilt(tilt);
         requestRender();
     }
 }

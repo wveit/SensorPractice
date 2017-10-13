@@ -1,6 +1,7 @@
 package com.example.androidu.sensorpractice.GL;
 
 import android.opengl.GLES20;
+import android.opengl.Matrix;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -14,9 +15,10 @@ import java.nio.ShortBuffer;
 public class GLSquare {
 
     private final String vertexShaderCode =
+            "uniform mat4 uMVPMatrix;" +
             "attribute vec4 vPosition;" +
                     "void main() {" +
-                    "  gl_Position = vPosition;" +
+                    "  gl_Position = uMVPMatrix * vPosition;" +
                     "}";
 
     private final String fragmentShaderCode =
@@ -35,10 +37,16 @@ public class GLSquare {
     private short drawOrder[] = { 0, 1, 2, 0, 2, 3 }; // order to draw vertices
 
     // color values are stored in a float array
-    private float color[] = { 0.63671875f, 0.76953125f, 0.22265625f, 1.0f };
+    private float color[] = { 0.63671875f, 0.76953125f, 0.22265625f, 0.167f };
 
     private int mPositionHandle;
     private int mColorHandle;
+
+    private float mXAngle = 0.0f;
+    private float mYAngle = 0.0f;
+    private float mZAngle = 0.0f;
+
+    private float distance[] = {0.0f, 0.0f, -5f};
 
     private int vertexCount = 0;
     private final int vertexStride = COORDS_PER_VERTEX * 4; // 4 bytes per vertex
@@ -49,10 +57,12 @@ public class GLSquare {
 
     public void init(double ratio) {
         float squareCoords[] = {
-                -0.5f,  (float)(0.5 * ratio), 0.0f,   // top left
-                -0.5f, (float)(-0.5 * ratio), 0.0f,   // bottom left
-                0.5f, (float)(-0.5 * ratio), 0.0f,   // bottom right
-                0.5f,  (float)(0.5 * ratio), 0.0f }; // top right
+                -0.75f,  0.75f, 0.0f,  // top left
+                -0.75f, -0.75f, 0.0f,  // bottom left
+                0.75f, -0.75f, 0.0f,   // bottom right
+                -0.75f,  0.75f, 0.0f,  // top left
+                0.75f,  0.75f, 0.0f,   // top right
+                0.75f, -0.75f, 0.0f }; // bottom right
 
         vertexCount = squareCoords.length / COORDS_PER_VERTEX;
 
@@ -92,7 +102,25 @@ public class GLSquare {
         GLES20.glLinkProgram(mProgram);
     }
 
-    public void draw() {
+    public void setXRotation(float xAngle) {
+        mXAngle = xAngle;
+    }
+
+    public void setYRotation(float yAngle) {
+        mYAngle = yAngle;
+    }
+
+    public void setZRotation(float zAngle) {
+        mZAngle = zAngle;
+    }
+
+    public void setDistanceFromUser(float x, float y, float z) {
+        distance[0] = x;
+        distance[1] = y;
+        distance[2] = z;
+    }
+
+    public void draw(float[] viewMatrix, float[] projectionMatrix) {
         // Add program to OpenGL ES environment
         GLES20.glUseProgram(mProgram);
 
@@ -113,8 +141,37 @@ public class GLSquare {
         // Set color for drawing the triangle
         GLES20.glUniform4fv(mColorHandle, 1, color, 0);
 
+        float[] mModelMatrix = new float[16];
+        float[] mTranslationMatrix = new float[16];
+        float[] mRotationMatrix = new float[16];
+        float[] mMVPMatrix = new float[16];
+
+        Matrix.setIdentityM(mModelMatrix, 0);
+
+        Matrix.setIdentityM(mRotationMatrix, 0);
+        Matrix.setRotateM(mRotationMatrix, 0, mZAngle, 0, 0, 1);
+        Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrix, 0);
+
+        Matrix.setIdentityM(mRotationMatrix, 0);
+        Matrix.setRotateM(mRotationMatrix, 0, mYAngle, 0, 1, 0);
+        Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrix, 0);
+
+        Matrix.setIdentityM(mTranslationMatrix, 0);
+        Matrix.translateM(mTranslationMatrix, 0, distance[0], distance[1], distance[2]);
+        Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mTranslationMatrix, 0);
+
+        Matrix.multiplyMM(mMVPMatrix, 0, viewMatrix, 0, mModelMatrix, 0);
+        Matrix.multiplyMM(mMVPMatrix, 0, projectionMatrix, 0, mMVPMatrix, 0);
+
+        // get handle to shape's transformation matrix
+        int mMVPMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uMVPMatrix");
+
+        // Apply the projection and view transformation
+        GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mMVPMatrix, 0);
+
         // Draw the triangle
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, vertexCount);
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, vertexCount);
+        //GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, vertexCount);
 
         // Disable vertex array
         GLES20.glDisableVertexAttribArray(mPositionHandle);

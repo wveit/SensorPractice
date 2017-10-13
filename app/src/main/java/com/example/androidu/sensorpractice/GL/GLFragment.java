@@ -25,4 +25,12 @@ public class GLFragment extends Fragment
         mGLView = new GLView(this.getActivity().getApplicationContext());
         return mGLView;
     }
+
+    public void setBearing(double bearing) {
+        mGLView.setBearing(bearing);
+    }
+
+    public void setTilt(double tilt) {
+        mGLView.setTilt(tilt);
+    }
 }
