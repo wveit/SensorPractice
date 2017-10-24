@@ -276,8 +276,12 @@ public class DisplayARActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
 
-        if(mRequestingLocationUpdates)
+        Log.d(TAG, "paused!");
+
+        if(mRequestingLocationUpdates) {
             stopLocationUpdates();
+            mSensors.stop();
+        }
     }
 
     private void connectDataNetwork() {
@@ -460,10 +464,12 @@ public class DisplayARActivity extends AppCompatActivity {
                         mMap.setBuildingsEnabled(true);
 
                         // setup data network
-                        connectDataNetwork();
+                        //connectDataNetwork();
 
                         // setup sensors
                         mSensorData = new ArrayMap<>();
+
+                        mRequestingLocationUpdates = true;
                     }
                 })
                 .addOnFailureListener(this, new OnFailureListener() {
@@ -511,7 +517,6 @@ public class DisplayARActivity extends AppCompatActivity {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
                         mRequestingLocationUpdates = false;
-                        mSensors.stop();
                     }
                 });
     }
@@ -539,6 +544,8 @@ public class DisplayARActivity extends AppCompatActivity {
             mGLFragment.setBearing(Math.round(bearing * 10) / 10.0f);
             updateCameraBearing(mMap, 360 - bearing);
         }
+        float vTilt = MyMath.portraitTiltAngle(gravityVector, magnetVector);
+        mGLFragment.setViewTilt((vTilt * 10) / 10.0f);
         mGLFragment.setTilt((tilt * 10) / 10.0f);
         //((CameraOverlayView) mCamOverlay).setTilt((tilt * 10) / 10.0f);
     }

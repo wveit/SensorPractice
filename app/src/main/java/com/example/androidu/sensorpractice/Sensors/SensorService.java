@@ -5,6 +5,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.util.Log;
 
 import java.util.ArrayList;
 
@@ -54,7 +55,12 @@ public class SensorService {
     }
 
     public void stop(){
-        mSensorManager.unregisterListener(mListener);
+        Log.d("SensorService", "Stopping Sensors!");
+        for(int i=0; i<mSensors.length; i++) {
+            if(sensorExists(i)) {
+                mSensorManager.unregisterListener(mListener, mSensors[i]);
+            }
+        }
         mRunning = false;
     }
 

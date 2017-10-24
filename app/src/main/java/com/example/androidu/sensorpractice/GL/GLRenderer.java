@@ -40,7 +40,7 @@ public class GLRenderer implements GLSurfaceView.Renderer{
         }
 
         if(mSquare != null) {
-            mSquare.draw(mViewMatrix, mProjectionMatrix);
+            mSquare.draw(mViewMatrix, mProjectionMatrix, mRatio);
         }
     }
 
@@ -59,7 +59,7 @@ public class GLRenderer implements GLSurfaceView.Renderer{
         // We are looking toward the distance
         final float lookX = 0.0f;
         final float lookY = 0.0f;
-        final float lookZ = -10.0f;
+        final float lookZ = -25.0f;
 
         // Set our up vector. This is where our head would be pointing were we holding the camera.
         final float upX = 0.0f;
@@ -108,6 +108,10 @@ public class GLRenderer implements GLSurfaceView.Renderer{
         mBearing = bearing;
         Log.d("GLRenderer", "set bearing: " + bearing);
         mSquare.setYRotation((float)-bearing);
+    }
+
+    public void setViewTilt(double vTilt) {
+        mSquare.setXRotation((float)vTilt);
     }
 
     public void setTilt(double tilt) {

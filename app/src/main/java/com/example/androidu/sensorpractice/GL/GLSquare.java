@@ -46,7 +46,7 @@ public class GLSquare {
     private float mYAngle = 0.0f;
     private float mZAngle = 0.0f;
 
-    private float distance[] = {0.0f, 0.0f, -5f};
+    private float distance[] = {0.0f, 0.0f, -8f};
 
     private int vertexCount = 0;
     private final int vertexStride = COORDS_PER_VERTEX * 4; // 4 bytes per vertex
@@ -120,7 +120,7 @@ public class GLSquare {
         distance[2] = z;
     }
 
-    public void draw(float[] viewMatrix, float[] projectionMatrix) {
+    public void draw(float[] viewMatrix, float[] projectionMatrix, float ratio) {
         // Add program to OpenGL ES environment
         GLES20.glUseProgram(mProgram);
 
@@ -149,16 +149,20 @@ public class GLSquare {
         Matrix.setIdentityM(mModelMatrix, 0);
 
         Matrix.setIdentityM(mRotationMatrix, 0);
-        Matrix.setRotateM(mRotationMatrix, 0, mZAngle, 0, 0, 1);
-        Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrix, 0);
-
-        Matrix.setIdentityM(mRotationMatrix, 0);
         Matrix.setRotateM(mRotationMatrix, 0, mYAngle, 0, 1, 0);
         Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrix, 0);
 
+        //Matrix.setIdentityM(mRotationMatrix, 0);
+        //Matrix.setRotateM(mRotationMatrix, 0, mXAngle, 1, 0, 0);
+        //Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrix, 0);
+
         Matrix.setIdentityM(mTranslationMatrix, 0);
-        Matrix.translateM(mTranslationMatrix, 0, distance[0], distance[1], distance[2]);
+        Matrix.translateM(mTranslationMatrix, 0, distance[0], distance[1] / ratio, distance[2]);
         Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mTranslationMatrix, 0);
+
+        Matrix.setIdentityM(mRotationMatrix, 0);
+        Matrix.setRotateM(mRotationMatrix, 0, mZAngle, 0, 0, 1);
+        Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrix, 0);
 
         Matrix.multiplyMM(mMVPMatrix, 0, viewMatrix, 0, mModelMatrix, 0);
         Matrix.multiplyMM(mMVPMatrix, 0, projectionMatrix, 0, mMVPMatrix, 0);

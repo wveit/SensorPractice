@@ -110,6 +110,37 @@ public class MyMath {
             return 360 - angle;
     }
 
+    public static float portraitTiltAngle(float[] gravityVec, float[] magnetVec) {
+        float[] northVec = MyMath.crossProduct(gravityVec, MyMath.crossProduct(magnetVec, gravityVec));
+        float[] frontVec = MyMath.crossProduct(gravityVec, new float[]{1, 0, 0});
+        //float[] downwardVec = MyMath.crossProduct(frontVec, MyMath.crossProduct(frontVec, gravityVec));
+        //float[] negGrav = {-gravityVec[0], -gravityVec[1], -gravityVec[2]};
+        float angle = MyMath.angle(frontVec, northVec);
+        angle = radToDegrees(angle);
+
+        //Log.d(TAG, "front vector   = [" + frontVec[0] + ", " + frontVec[1] + ", " + frontVec[2] + "]");
+        //Log.d(TAG, "downward vector= [" + downwardVec[0] + ", " + downwardVec[1] + ", " + downwardVec[2] + "]");
+        //Log.d(TAG, "gravity vector = [" + gravityVec[0] + ", " + gravityVec[1] + ", " + gravityVec[2] + "]");
+        Log.d(TAG, "tilt angle = " + angle);
+
+        return angle;
+
+        /*
+        float[] zyGravityVec = {0, gravityVec[1], gravityVec[2]};
+        float[] phoneUpVec = {0, 1, 0};
+        float unitDotProduct = dotProduct(phoneUpVec, zyGravityVec) / magnitude(zyGravityVec) / magnitude(phoneUpVec);
+        float angle = (float)Math.acos(unitDotProduct);
+        angle = radToDegrees(angle * 2);
+        float direction = dotProduct(crossProduct(phoneUpVec, zyGravityVec), new float[]{1, 0, 0});
+
+        if(direction >= 0) {
+            return angle;
+        }
+        else
+            return 360 - angle;
+        */
+    }
+
     // taken from http://blog.thomnichols.org/2011/08/smoothing-sensor-data-with-a-low-pass-filter
 
     /*

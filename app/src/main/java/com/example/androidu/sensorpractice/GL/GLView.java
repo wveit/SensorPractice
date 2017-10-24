@@ -41,6 +41,11 @@ public class GLView extends GLSurfaceView {
         requestRender();
     }
 
+    public void setViewTilt(double vTilt) {
+        mRenderer.setViewTilt(vTilt);
+        requestRender();
+    }
+
     public void setTilt(double tilt) {
         mTilt = tilt;
         mRenderer.setTilt(tilt);

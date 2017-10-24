@@ -29,7 +29,9 @@ public class GLFragment extends Fragment
     public void setBearing(double bearing) {
         mGLView.setBearing(bearing);
     }
-
+    public void setViewTilt(double vTilt) {
+        mGLView.setViewTilt(vTilt);
+    }
     public void setTilt(double tilt) {
         mGLView.setTilt(tilt);
     }
