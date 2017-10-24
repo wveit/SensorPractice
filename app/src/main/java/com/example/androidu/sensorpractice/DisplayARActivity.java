@@ -536,6 +536,7 @@ public class DisplayARActivity extends AppCompatActivity {
         float[] gravityVector = mSensorData.get(new Integer(SensorService.GRAVITY));
         float[] magnetVector = mSensorData.get(new Integer(SensorService.MAGNETIC_FIELD));
 
+        //float tilt = MyMath.landscapeTiltAngle(gravityVector, magnetVector);
         float tilt = MyMath.landscapeTiltAngle(gravityVector, mPhoneUpVector);
         float bearing = MyMath.compassBearing(gravityVector, magnetVector, mPhoneFrontVector);
         if (Math.abs(bearing - mBearing) >= 1.10) {

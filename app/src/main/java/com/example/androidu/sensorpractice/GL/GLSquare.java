@@ -149,12 +149,12 @@ public class GLSquare {
         Matrix.setIdentityM(mModelMatrix, 0);
 
         Matrix.setIdentityM(mRotationMatrix, 0);
-        Matrix.setRotateM(mRotationMatrix, 0, mYAngle, 0, 1, 0);
+        Matrix.setRotateM(mRotationMatrix, 0, mYAngle, (float) -Math.sin(mZAngle * Math.PI / 180.0), (float) Math.cos(mZAngle * Math.PI / 180.0), 0);
         Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrix, 0);
 
-        //Matrix.setIdentityM(mRotationMatrix, 0);
-        //Matrix.setRotateM(mRotationMatrix, 0, mXAngle, 1, 0, 0);
-        //Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrix, 0);
+        Matrix.setIdentityM(mRotationMatrix, 0);
+        Matrix.setRotateM(mRotationMatrix, 0, mXAngle, (float) Math.cos(mZAngle * Math.PI / 180.0), (float) Math.sin(mZAngle * Math.PI / 180.0), 0);
+        Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrix, 0);
 
         Matrix.setIdentityM(mTranslationMatrix, 0);
         Matrix.translateM(mTranslationMatrix, 0, distance[0], distance[1] / ratio, distance[2]);
